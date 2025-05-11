@@ -18,40 +18,29 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        serif: ['Playfair Display', 'serif'],
+    },
+      boxShadow: {
+        'text-shadow': '2px 2px 4px rgba(255, 255, 255, 0.5)',
+      },
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
+        background: "rgba(var(--background))",
+        foreground: "rgba(var(--foreground))",
+        "background-secondary": "rgba(var(--background-secondary))",
+        "foreground-secondary": "rgba(var(--foreground-secondary))",
+        warning: "rgba(var(--warning))",
+        success: "rgba(var(--success))",
+        danger: "rgba(var(--danger))",
+        info: "rgba(var(--info))",
+        text: "rgba(var(--text))",
+        border: "rgba(var(--border))",
+        contrast: "rgba(var(--contrast))",
+        "icon-border": "rgba(var(--icon-border))",
+        soil: "rgba(var(--soil))",
+        "slate-800" : "rgba(var(--slate-800))",
+        indigo: "rgba(var(--indigo))",
       },
       borderRadius: {
         lg: "var(--radius)",
