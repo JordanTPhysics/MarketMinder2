@@ -20,7 +20,7 @@ export default async function Home() {
         </div>
 
         <span className="m-10 lg:text-4xl text-lg text-text font-serif bg-foreground p-4 rounded-md shadow-md shadow-violet-500/50 border-2 border-border hover:scale-105 transition duration-300">
-          <Link href="/demo">Demo</Link>
+          <Link className='font-semibold' href="/demo">Demo</Link>
         </span>
       </section>
       <section className="flex flex-col items-center justify-evenly p-2 w-screen">

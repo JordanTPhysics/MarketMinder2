@@ -20,7 +20,7 @@ export default async function Signup(props: {
 
   return (
     <>
-      <form className="bg-background rounded-lg p-4 my-4 shadow-md shadow-black w-1/3">
+      <form className="bg-background rounded-lg p-4 my-4 shadow-md shadow-black w-1/3 text-text">
         <h1 className="text-2xl font-medium">Sign up</h1>
         <p className="text-sm text text-foreground">
           Already have an account?{" "}

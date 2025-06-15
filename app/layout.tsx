@@ -2,6 +2,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import { RouteProgress } from "@/components/route-progress";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -33,8 +34,7 @@ export default function RootLayout({
           disableTransitionOnChange
         > */}
         <div className="">
-
-          
+          <RouteProgress />
           <Header/>
           {children}
           <Footer />

@@ -27,7 +27,6 @@ export default function Footer() {
         <div className='flex flex-row'>
           <Link href='https://github.com/JordanTPhysics' className='mx-auto' target='_blank'><FaGithub size={size} color={iconColor} /></Link>
 
-          <Link href='/policy' className='mx-auto' ><Image className='rounded-lg' src="/logo.ico" width={50} height={50} alt='MarketMinder logo'></Image></Link>
         </div>
       </div>
 
