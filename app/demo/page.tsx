@@ -11,8 +11,34 @@ const InteractiveMap = dynamic(() => import('../../components/InteractiveMap'), 
 import { DataTable } from "../../components/ui/data-table";
 import { columns, Place, IsCloseMatch } from "../../lib/places";
 import { ComboboxDropdown } from "../../components/ui/combobox";
+import BusinessViabilitySection from "../../components/BusinessViabilitySection";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+const fetchWikidataCityStats = async (city: string, country: string) => {
+  // SPARQL query for city population, area, and GDP (if available)
+  const endpoint = "https://query.wikidata.org/sparql";
+  const query = `
+    SELECT ?population ?area ?gdp WHERE {
+      ?city rdfs:label "${city}"@en.
+      ?city wdt:P17 ?country.
+      ?country rdfs:label "${country}"@en.
+      OPTIONAL { ?city wdt:P1082 ?population. }
+      OPTIONAL { ?city wdt:P2046 ?area. }
+      OPTIONAL { ?city wdt:P2131 ?gdp. }
+    } LIMIT 1
+  `;
+  const url = endpoint + "?query=" + encodeURIComponent(query) + "&format=json";
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.results.bindings.length === 0) return {};
+  const row = data.results.bindings[0];
+  const population = row.population ? parseInt(row.population.value) : undefined;
+  const area = row.area ? parseFloat(row.area.value) : undefined;
+  const gdp = row.gdp ? parseFloat(row.gdp.value) : undefined;
+  const populationDensity = population && area ? Math.round(population / area) : undefined;
+  return { population, area, gdp, populationDensity };
+};
 
 const Dash = () => {
 
@@ -32,6 +58,7 @@ const Dash = () => {
     country: "",
     city: "",
   });
+  const [cityStats, setCityStats] = useState<{ population?: number; gdp?: number; populationDensity?: number }>({});
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -61,6 +88,13 @@ const Dash = () => {
       fetchCities();
     }
   }, [formData.country]);
+
+  useEffect(() => {
+    // Fetch city stats from Wikidata when places are set and city/country are selected
+    if (places.length > 0 && formData.city && formData.country) {
+      fetchWikidataCityStats(formData.city, formData.country).then(setCityStats);
+    }
+  }, [places, formData.city, formData.country]);
 
   const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -163,8 +197,10 @@ const Dash = () => {
 
     getGmapsPlaces().then(places => {
       setPlaces(places);
-      setLatLng([places[0].Latitude, places[0].Longitude]);
-      setZoom(15); // Set zoom level to 10 for better visibility
+      if (places.length > 0) {
+        setLatLng([places[0].Latitude, places[0].Longitude]);
+        setZoom(15); // Set zoom level to 10 for better visibility
+      }
     });
     // Add your form submission logic here
   };
@@ -267,6 +303,19 @@ const Dash = () => {
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
         {places.length > 0 ? <DataTable columns={columns} data={places} /> : <div className="text-text text-2xl font-semibold"></div>}
         {places.length > 0 ? <button className="px-6 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300" onClick={downloadCsv}>Download CSV</button> : <div></div>}
+        {places.length > 0 ? (
+          <BusinessViabilitySection
+            averageReviewScore={
+              places.length > 0
+                ? places.reduce((acc, p) => acc + (typeof p.Rating === 'number' ? p.Rating : 0), 0) / places.length
+                : 0
+            }
+            gdp={cityStats.gdp}
+            population={cityStats.population}
+            populationDensity={cityStats.populationDensity}
+            // TODO: Add ageDemographics and notableFeatures if available
+          />
+        ) : null}
       </section>
     </div>
   </>;

@@ -6,7 +6,6 @@ import { LoadingSpinner } from './loading-spinner';
 
 export function RouteProgress() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -17,7 +16,7 @@ export function RouteProgress() {
     }, 200);
 
     return () => clearTimeout(timeout);
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   if (!isLoading) return null;
 
