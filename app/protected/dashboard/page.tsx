@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import dynamic from 'next/dynamic';
 import { Marker, APIProvider } from "@vis.gl/react-google-maps";
 
@@ -12,8 +11,34 @@ const InteractiveMap = dynamic(() => import('../../../components/InteractiveMap'
 import { DataTable } from "../../../components/ui/data-table";
 import { columns, Place, IsCloseMatch } from "../../../lib/places";
 import { ComboboxDropdown } from "../../../components/ui/combobox";
+import BusinessViabilitySection from "../../../components/BusinessViabilitySection";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+const fetchWikidataCityStats = async (city: string, country: string) => {
+  // SPARQL query for city population, area, and GDP (if available)
+  const endpoint = "https://query.wikidata.org/sparql";
+  const query = `
+    SELECT ?population ?area ?gdp WHERE {
+      ?city rdfs:label "${city}"@en.
+      ?city wdt:P17 ?country.
+      ?country rdfs:label "${country}"@en.
+      OPTIONAL { ?city wdt:P1082 ?population. }
+      OPTIONAL { ?city wdt:P2046 ?area. }
+      OPTIONAL { ?city wdt:P2131 ?gdp. }
+    } LIMIT 1
+  `;
+  const url = endpoint + "?query=" + encodeURIComponent(query) + "&format=json";
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.results.bindings.length === 0) return {};
+  const row = data.results.bindings[0];
+  const population = row.population ? parseInt(row.population.value) : undefined;
+  const area = row.area ? parseFloat(row.area.value) : undefined;
+  const gdp = row.gdp ? parseFloat(row.gdp.value) : undefined;
+  const populationDensity = population && area ? Math.round(population / area) : undefined;
+  return { population, area, gdp, populationDensity };
+};
 
 const Dash = () => {
 
@@ -33,6 +58,7 @@ const Dash = () => {
     country: "",
     city: "",
   });
+  const [cityStats, setCityStats] = useState<{ population?: number; gdp?: number; populationDensity?: number }>({});
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -62,6 +88,13 @@ const Dash = () => {
       fetchCities();
     }
   }, [formData.country]);
+
+  useEffect(() => {
+    // Fetch city stats from Wikidata when places are set and city/country are selected
+    if (places.length > 0 && formData.city && formData.country) {
+      fetchWikidataCityStats(formData.city, formData.country).then(setCityStats);
+    }
+  }, [places, formData.city, formData.country]);
 
   const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -164,11 +197,25 @@ const Dash = () => {
 
     getGmapsPlaces().then(places => {
       setPlaces(places);
-      setLatLng([places[0].Latitude, places[0].Longitude]);
-      setZoom(15); // Set zoom level to 10 for better visibility
+      if (places.length > 0) {
+        setLatLng([places[0].Latitude, places[0].Longitude]);
+        setZoom(15); // Set zoom level to 10 for better visibility
+      }
     });
     // Add your form submission logic here
   };
+
+  const downloadCsv = () => {
+    const csvHeaders = "Place Name,Address,Rating,Phone,Url";
+    const csvContent = places.map(place => `${place.PlaceName},${place.Address},${place.Rating},${place.Phone},${place.Url}`).join('\n');
+    const blob = new Blob([csvHeaders + '\n' + csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'places.csv';
+    a.click();
+  }
+  
 
   const infoWindowContent = (place: Place) => {
     return (
@@ -184,11 +231,6 @@ const Dash = () => {
 
   return <>
     <div className="text-text bg-gradient-to-b from-slate-800 to-violet-800 h-full flex flex-col align-middle items-center text-center">
-      <section className="flex flex-col items-center justify-center h-1/3 p-2 w-screen">
-        <h1 className="lg:text-6xl text-3xl font-bold text-text">MarketMinder</h1>
-        <p className="mt-4 lg:text-2xl text-lg text-text">FREE In-Browser competitor analytics</p>
-        <Link href="/contact" onClick={handleContactClick} className="mt-8 px-6 py-3 bg-slate-600 rounded-md text-lg font-semibold hover:bg-slate-700 transition duration-300">Contact Us</Link>
-      </section>
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
         <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Search</h2>
         <div className="flex flex-row items-center justify-evenly w-full p-4">
@@ -259,7 +301,21 @@ const Dash = () => {
         </div>
       </section>
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
-        <DataTable columns={columns} data={places} />
+        {places.length > 0 ? <DataTable columns={columns} data={places} /> : <div className="text-text text-2xl font-semibold"></div>}
+        {places.length > 0 ? <button className="px-6 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300" onClick={downloadCsv}>Download CSV</button> : <div></div>}
+        {places.length > 0 ? (
+          <BusinessViabilitySection
+            averageReviewScore={
+              places.length > 0
+                ? places.reduce((acc, p) => acc + (typeof p.Rating === 'number' ? p.Rating : 0), 0) / places.length
+                : 0
+            }
+            gdp={cityStats.gdp}
+            population={cityStats.population}
+            populationDensity={cityStats.populationDensity}
+            // TODO: Add ageDemographics and notableFeatures if available
+          />
+        ) : null}
       </section>
     </div>
   </>;

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import dynamic from 'next/dynamic';
 import { Marker, APIProvider } from "@vis.gl/react-google-maps";
+import Link from "next/link";
 
 const InteractiveMap = dynamic(() => import('../../components/InteractiveMap'), {
   ssr: false,
@@ -58,7 +59,8 @@ const Dash = () => {
     country: "",
     city: "",
   });
-  const [cityStats, setCityStats] = useState<{ population?: number; gdp?: number; populationDensity?: number }>({});
+  const [hasSearched, setHasSearched] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -90,11 +92,14 @@ const Dash = () => {
   }, [formData.country]);
 
   useEffect(() => {
-    // Fetch city stats from Wikidata when places are set and city/country are selected
-    if (places.length > 0 && formData.city && formData.country) {
-      fetchWikidataCityStats(formData.city, formData.country).then(setCityStats);
+    // Check localStorage for search flag
+    if (typeof window !== 'undefined') {
+      const searched = localStorage.getItem('demoHasSearched');
+      if (searched === 'true') {
+        setHasSearched(true);
+      }
     }
-  }, [places, formData.city, formData.country]);
+  }, []);
 
   const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -111,6 +116,10 @@ const Dash = () => {
 
   const handleUseLocationClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+    if (hasSearched) {
+      setShowAuthPrompt(true);
+      return;
+    }
     const getNearbyPlaces = async () => {
       const response = await fetch('/api/getNearbyPlaces', {
         method: 'POST',
@@ -147,12 +156,14 @@ const Dash = () => {
         const { latitude, longitude } = position.coords;
         setLatLng([latitude, longitude]);
         setZoom(15);
-
       });
-
       getNearbyPlaces().then(places => {
         setPlaces(places);
-
+        // Set flag in localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('demoHasSearched', 'true');
+          setHasSearched(true);
+        }
       });
     } else {
       console.error("Geolocation is not supported by this browser.");
@@ -161,6 +172,10 @@ const Dash = () => {
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (hasSearched) {
+      setShowAuthPrompt(true);
+      return;
+    }
     const getGmapsPlaces = async () => {
       const response = await fetch('/api/getGmapsPlaces', {
         method: 'POST',
@@ -200,6 +215,11 @@ const Dash = () => {
       if (places.length > 0) {
         setLatLng([places[0].Latitude, places[0].Longitude]);
         setZoom(15); // Set zoom level to 10 for better visibility
+      }
+      // Set flag in localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('demoHasSearched', 'true');
+        setHasSearched(true);
       }
     });
     // Add your form submission logic here
@@ -301,21 +321,22 @@ const Dash = () => {
         </div>
       </section>
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
+        {showAuthPrompt && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white p-8 rounded-lg shadow-lg flex flex-col items-center">
+              <h2 className="text-2xl font-bold mb-4 text-black">Sign up or sign in to continue</h2>
+              <p className="mb-6 text-black">You have used your free demo search. Please sign up or sign in to continue using the map search feature.</p>
+              <div className="flex gap-4">
+                <Link href="/sign-up" className="px-4 py-2 bg-violet-700 text-white rounded hover:bg-violet-800">Sign Up</Link>
+                <Link href="/sign-in" className="px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-800">Sign In</Link>
+                <button onClick={() => setShowAuthPrompt(false)} className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400">Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
         {places.length > 0 ? <DataTable columns={columns} data={places} /> : <div className="text-text text-2xl font-semibold"></div>}
         {places.length > 0 ? <button className="px-6 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300" onClick={downloadCsv}>Download CSV</button> : <div></div>}
-        {places.length > 0 ? (
-          <BusinessViabilitySection
-            averageReviewScore={
-              places.length > 0
-                ? places.reduce((acc, p) => acc + (typeof p.Rating === 'number' ? p.Rating : 0), 0) / places.length
-                : 0
-            }
-            gdp={cityStats.gdp}
-            population={cityStats.population}
-            populationDensity={cityStats.populationDensity}
-            // TODO: Add ageDemographics and notableFeatures if available
-          />
-        ) : null}
+
       </section>
     </div>
   </>;
