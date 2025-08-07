@@ -16,6 +16,7 @@ export class Place {
   Latitude: number;
   Longitude: number;
   Rating: number;
+  RatingCount: number;
   Url: string;
   Types: string;
   Phone: string;
@@ -28,6 +29,7 @@ export class Place {
     Latitude: number,
     Longitude: number,
     Rating: number,
+    RatingCount: number,
     Url: string,
     Types: string,
     Phone: string,
@@ -39,6 +41,7 @@ export class Place {
     this.Latitude = Latitude;
     this.Longitude = Longitude;
     this.Rating = Rating;
+    this.RatingCount = RatingCount;
     this.Url = Url;
     this.Types = Types;
     this.Phone = Phone;
@@ -181,10 +184,21 @@ export const columns: ColumnDef<Place>[] = [
         </button>
       )
 
-    }, accessorKey: "Rating",
-    cell: ({ cell }) => {
-      return <StarRating rating={cell.row.original.Rating} size="sm" />;
-    }
+    }, accessorKey: "Rating"
+  },
+  {
+    header: ({ column }) => {
+      return (
+        <button
+          className="text-white"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Number of Reviews
+          <ArrowUpDown className="ml-2 h-4 w-4 text-white" />
+        </button>
+      )
+
+    }, accessorKey: "RatingCount",
   },
   {
     header: ({ column }) => {

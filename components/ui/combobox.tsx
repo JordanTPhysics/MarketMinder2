@@ -29,7 +29,23 @@ type FormDropdownProps = {
 export function ComboboxDropdown({ type, keys, values, onChange }: FormDropdownProps) {
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState("")
-  
+  const [inputValue, setInputValue] = React.useState("")
+
+  // When user selects from the list
+  const handleSelect = (currentValue: string) => {
+    onChange(currentValue)
+    setOpen(false)
+    setValue(currentValue)
+    setInputValue(currentValue)
+  }
+
+  // When user types and presses Enter
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && inputValue.trim() !== "") {
+      handleSelect(inputValue.trim())
+      setOpen(false)
+    }
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -43,7 +59,13 @@ export function ComboboxDropdown({ type, keys, values, onChange }: FormDropdownP
       </PopoverTrigger>
       <PopoverContent className="bg-foreground-secondary border-border rounded-sm">
         <Command>
-          <CommandInput placeholder={`Select a ${type}`} className="text-text" />
+          <CommandInput 
+            placeholder={`Select a ${type}`}
+            className="text-text"
+            value={inputValue}
+            onValueChange={setInputValue}
+            onKeyDown={handleInputKeyDown}
+          />
           <CommandList >
             <CommandEmpty>{type} not found</CommandEmpty>
             <CommandGroup>
@@ -55,24 +77,13 @@ export function ComboboxDropdown({ type, keys, values, onChange }: FormDropdownP
                   disabled
                   value={"IsNotReal"}
                   >
-
                 </CommandItem> :
                 <CommandItem
                 className="text-text"
                   key={index}
                   value={values[index]}
-                  onSelect={(currentValue) => {
-                    onChange(currentValue)
-                    setOpen(false)
-                    setValue(currentValue)
-                  }}
+                  onSelect={handleSelect}
                 >
-                  {/* <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === values[index] ? "opacity-100" : "opacity-0"
-                    )}
-                  /> */}
                   {key}
                 </CommandItem>
               ))}

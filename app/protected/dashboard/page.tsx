@@ -12,8 +12,16 @@ import { DataTable } from "../../../components/ui/data-table";
 import { columns, Place, IsCloseMatch } from "../../../lib/places";
 import { ComboboxDropdown } from "../../../components/ui/combobox";
 import BusinessViabilitySection from "../../../components/BusinessViabilitySection";
+import { Button } from "@/components/ui/button";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+interface CityData {
+  populationDensity: string | null;
+  ageDemographics: string | null;
+  employmentStats: string | null;
+  gdp: string | null;
+}
 
 const fetchWikidataCityStats = async (city: string, country: string) => {
   // SPARQL query for city population, area, and GDP (if available)
@@ -52,13 +60,16 @@ const Dash = () => {
     name: string;
     country: string;
     city: string;
+    postcode: string;
   }>({
     type: "",
     name: "", // Default to an empty string
     country: "",
     city: "",
+    postcode: "",
   });
   const [cityStats, setCityStats] = useState<{ population?: number; gdp?: number; populationDensity?: number }>({});
+  const [cityData, setCityData] = useState<CityData | null>(null);
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -84,7 +95,7 @@ const Dash = () => {
       const cityNames = data.data.map((city: string) => city);
       setCities(cityNames);
     };
-    if (formData.country.length > 0) {
+    if (countries.includes(formData.country)) {
       fetchCities();
     }
   }, [formData.country]);
@@ -95,6 +106,7 @@ const Dash = () => {
       fetchWikidataCityStats(formData.city, formData.country).then(setCityStats);
     }
   }, [places, formData.city, formData.country]);
+
 
   const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -132,6 +144,7 @@ const Dash = () => {
           data.places[i].location.latitude,
           data.places[i].location.longitude,
           data.places[i].rating,
+          data.places[i].userRatingCount,
           data.places[i].websiteUri,
           data.places[i].types.join(", "),
           data.places[i].nationalPhoneNumber,
@@ -169,6 +182,7 @@ const Dash = () => {
           type: formData.type.toLowerCase(),
           city: formData.city,
           country: formData.country,
+          postCode: formData.postcode,
         }),
       });
       const data = await response.json();
@@ -184,6 +198,7 @@ const Dash = () => {
           data.places[i].location.latitude,
           data.places[i].location.longitude,
           data.places[i].rating,
+          data.places[i].userRatingCount,
           data.places[i].websiteUri,
           data.places[i].types.join(", "),
           data.places[i].nationalPhoneNumber,
@@ -235,14 +250,8 @@ const Dash = () => {
         <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Search</h2>
         <div className="flex flex-row items-center justify-evenly w-full p-4">
           <form onSubmit={handleFormSubmit}>
-            <div className="mb-4">
-              <label htmlFor="name" className="block text-lg font-semibold text-text text-left">Business Name:</label>
-              <input type="name" id="name" name="name" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
-            </div>
-            <div className="mb-4">
-              <label htmlFor="type" className="block text-lg font-semibold text-text text-left">Business Type:</label>
-              <input type="type" id="type" name="type" onChange={handleFormChange} required className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
-            </div>
+
+
             <div className="mb-4">
               <label htmlFor="country" className="block text-lg font-semibold text-text text-left">Country:</label>
               <ComboboxDropdown
@@ -264,8 +273,23 @@ const Dash = () => {
               />
             </div>
 
-            <button onClick={handleUseLocationClick} className="px-6 py-3 mx-2 bg-foreground rounded-md border-2 border-border text-lg font-semibold  hover:bg-slate-700 hover:scale-95 transition duration-300">Use Location</button>
-            <button type="submit" className="px-6 py-3 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300">Search</button>
+            <div className="mb-4">
+              <label htmlFor="postcode" className="block text-lg font-semibold text-text text-left">Postcode <span className="italic text-sm">(Optional)</span></label>
+              <input type="postcode" id="postcode" name="postcode" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="type" className="block text-lg font-semibold text-text text-left">Business Type:</label>
+              <input placeholder="restaurant, indian restaurant" type="type" id="type" name="type" onChange={handleFormChange} required className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="name" className="block text-lg font-semibold text-text text-left">Business Name <span className="italic text-sm">(Optional)</span></label>
+              <input placeholder="Nawaabs" type="name" id="name" name="name" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
+            </div>
+
+            <Button variant="outline" disabled={!formData.type} onClick={handleUseLocationClick} className="px-6 py-3 mx-2 bg-foreground rounded-md border-2 border-border text-lg font-semibold  hover:bg-slate-700 hover:scale-95 transition duration-300">Use Location</Button>
+            <Button variant="outline" type="submit" disabled={!formData.type || !formData.city || !formData.country} className="px-6 py-3 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300">Search</Button>
           </form>
           <div>
             {API_KEY == null ? <span className="text-danger">Google Maps API Key not Available</span> :
@@ -316,6 +340,14 @@ const Dash = () => {
             // TODO: Add ageDemographics and notableFeatures if available
           />
         ) : null}
+        {places.length > 0 && cityData && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold">City Data</h3>
+            <pre className="text-xs font-mono p-3 rounded border overflow-auto">
+              {JSON.stringify(cityData, null, 2)}
+            </pre>
+          </div>
+        )}
       </section>
     </div>
   </>;

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { GiFluffyWing } from "react-icons/gi";
 import { BsLightningCharge } from "react-icons/bs";
 import { TbMapSearch } from "react-icons/tb";
+import { Button } from '@/components/ui/button';
 
 export default async function Home() {
   return (
@@ -13,9 +14,13 @@ export default async function Home() {
         <div>
           <h1 className="lg:text-6xl text-3xl font-bold text-text">MarketMinder</h1>
           <span className="m-4 lg:text-2xl text-lg text-text"><span className='font-semibold'>FAST AND CHEAP </span>In-Browser competitor analytics</span>
-          <div className='my-4'>
-            <Link href="/sign-in" className="m-8 px-6 py-3 bg-slate-600 rounded-md text-lg font-semibold hover:bg-slate-700 transition duration-300">Sign In</Link>
-            <Link href="/sign-up" className="m-8 px-6 py-3 bg-slate-600 rounded-md text-lg font-semibold hover:bg-slate-700 transition duration-300">Sign Up</Link>
+          <div className='m-4 flex flex-row justify-center gap-4'>
+            <Button asChild size="lg" variant={"outline"}>
+              <Link href="/sign-in" >Sign In</Link>
+            </Button>
+            <Button asChild size="lg" variant={"outline"}>
+              <Link href="/sign-up" >Sign Up</Link>
+            </Button>
           </div>
         </div>
 

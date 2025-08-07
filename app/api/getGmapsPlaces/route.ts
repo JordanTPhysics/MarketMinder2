@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-
+  console.log(apiKey)
   if (!apiKey) {
     return NextResponse.json(
       { error: 'Google Maps API key is missing' },
@@ -13,9 +13,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { type, city, country } = body
+    const { type, city, country, postCode } = body
 
-    const textQuery = `${type} in ${city}, ${country}`
+    const textQuery = `${type} in ${city}, ${country}, ${postCode}`
 
     const payload = {
       textQuery: textQuery,
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
         'places.websiteUri',
         'places.name',
         'places.nationalPhoneNumber',
+        'places.userRatingCount'
       ].join(','),
     }
 
