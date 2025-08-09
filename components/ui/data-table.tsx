@@ -79,7 +79,7 @@ export function DataTable<TData, TValue>({
                             {headerGroup.headers.map((header) => {
                                 return (
                                     <TableHead
-                                        className="border-border text-text"
+                                        className="border-border border-r-2 text-text"
                                         key={header.id} >
                                         {header.isPlaceholder
                                             ? null
@@ -97,13 +97,13 @@ export function DataTable<TData, TValue>({
                     {table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
                             <TableRow
-                                className="hover:bg-background border-border text-text"
+                                className="hover:bg-background border-border border-r-2 text-text"
                                 key={row.id}
                                 data-state={row.getIsSelected() && "selected"}
                             >
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell key={cell.id}
-                                        className="max-w-6 overflow-hidden">
+                                        className="max-w-32 overflow-hidden border-border border-r-2">
                                         {flexRender(
                                             cell.column.columnDef.cell,
                                             cell.getContext())}
@@ -113,7 +113,7 @@ export function DataTable<TData, TValue>({
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={columns.length} className=" text-center">
+                            <TableCell colSpan={columns.length} className=" text-center border-border border-r-2">
                                 No results.
                             </TableCell>
                         </TableRow>

@@ -193,7 +193,7 @@ export const columns: ColumnDef<Place>[] = [
           className="text-white"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Number of Reviews
+          Review Count
           <ArrowUpDown className="ml-2 h-4 w-4 text-white" />
         </button>
       )
@@ -217,7 +217,7 @@ export const columns: ColumnDef<Place>[] = [
     cell: ({ cell }) => {
       return (
         <span>
-          {cell.getValue<string>().replaceAll(",", "")}
+          {cell.getValue<string>().replaceAll("_", " ")}
         </span>
       );
     }

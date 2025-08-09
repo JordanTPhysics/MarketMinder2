@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-  console.log(apiKey)
   if (!apiKey) {
     return NextResponse.json(
       { error: 'Google Maps API key is missing' },
