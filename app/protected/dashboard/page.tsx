@@ -222,7 +222,7 @@ const Dash = () => {
 
   const downloadCsv = () => {
     const csvHeaders = "Place Name,Address,Rating,Phone,Url";
-    const csvContent = places.map(place => `${place.PlaceName},${place.Address},${place.Rating},${place.Phone},${place.Url}`).join('\n');
+    const csvContent = places.map(place => `${place.PlaceName},${place.Address.replace(/,/g, " ")},${place.Rating},${place.Phone},${place.Url}`).join('\n');
     const blob = new Blob([csvHeaders + '\n' + csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -337,6 +337,7 @@ const Dash = () => {
             gdp={cityStats.gdp}
             population={cityStats.population}
             populationDensity={cityStats.populationDensity}
+            name={formData.city + ", " + formData.country}
             // TODO: Add ageDemographics and notableFeatures if available
           />
         ) : null}

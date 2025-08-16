@@ -264,3 +264,85 @@ export const columns: ColumnDef<Place>[] = [
   },
 
 ]
+
+export interface UKCityAgeData {
+  area: string;
+  allAges: number;
+  aged0to17: number;
+  aged18to24: number;
+  aged25to49: number;
+  aged50to64: number;
+  aged65plus: number;
+}
+
+export async function loadUKAgeDemographics(): Promise<UKCityAgeData[]> {
+  try {
+    const response = await fetch('/resources/UK_AgeDemographicsByCity.csv');
+    const csvText = await response.text();
+    
+    const lines = csvText.split('\n');
+    const headers = lines[0].split(',');
+    
+    const data: UKCityAgeData[] = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      // Handle CSV parsing with quotes
+      const values: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      
+      // Skip rows with missing data (marked with "-")
+      if (values.some(val => val === '-')) continue;
+      
+      const area = values[0].replace(/"/g, '');
+      const allAges = parseInt(values[1].replace(/"/g, '').replace(/,/g, '')) || 0;
+      const aged0to17 = parseInt(values[2].replace(/"/g, '').replace(/,/g, '')) || 0;
+      const aged18to24 = parseInt(values[3].replace(/"/g, '').replace(/,/g, '')) || 0;
+      const aged25to49 = parseInt(values[4].replace(/"/g, '').replace(/,/g, '')) || 0;
+      const aged50to64 = parseInt(values[5].replace(/"/g, '').replace(/,/g, '')) || 0;
+      const aged65plus = parseInt(values[6].replace(/"/g, '').replace(/,/g, '')) || 0;
+      
+      data.push({
+        area,
+        allAges,
+        aged0to17,
+        aged18to24,
+        aged25to49,
+        aged50to64,
+        aged65plus
+      });
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error loading UK age demographics:', error);
+    return [];
+  }
+}
+
+export function findCityAgeData(cityName: string, cityData: UKCityAgeData[]): UKCityAgeData | null {
+  const normalizedCityName = cityName.toLowerCase().trim();
+  
+  return cityData.find(city => {
+    const normalizedArea = city.area.toLowerCase().trim();
+    return normalizedArea === normalizedCityName || 
+           normalizedArea.includes(normalizedCityName) ||
+           normalizedCityName.includes(normalizedArea);
+  }) || null;
+}
