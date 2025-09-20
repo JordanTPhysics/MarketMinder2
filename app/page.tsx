@@ -12,7 +12,7 @@ export default async function Home() {
     <>
       <section className="flex flex-col items-center justify-evenly h-[80vh] p-2 w-screen">
         <div>
-          <h1 className="lg:text-6xl text-3xl font-bold text-text">MarketMinder</h1>
+          <h1 className="lg:text-6xl text-3xl font-bold text-text">MarkitMinder</h1>
           <span className="m-4 lg:text-2xl text-lg text-text"><span className='font-semibold'>FAST AND CHEAP </span>In-Browser competitor analytics</span>
           <div className='m-4 flex flex-row justify-center gap-4'>
             <Button asChild size="lg" variant={"outline"}>
@@ -33,7 +33,7 @@ export default async function Home() {
         <span className='lg:text-3xl text-lg m-4 w-2/3'>
           Looking to start a business, or buy an existing one, but not sure of market viability?
           Interested in analyzing your local competitors to see how you can stand out?
-          Or are you a sales rep looking for prospects? MarketMinder has all the tools you need to keep a finger on the pulse in real time.
+          Or are you a sales rep looking for prospects? MarkitMinder has all the tools you need to keep a finger on the pulse in real time.
         </span>
         <ul className="list-disc list-inside lg:text-3xl text-lg text-text">
           <li className="m-4 flex-row flex"><BsLightningCharge size={35} color='gold' className='mx-2' />scraping API of local market participants, reviews, ratings</li>

@@ -13,6 +13,10 @@ import { columns, Place, IsCloseMatch } from "../../../lib/places";
 import { ComboboxDropdown } from "../../../components/ui/combobox";
 import BusinessViabilitySection from "../../../components/BusinessViabilitySection";
 import { Button } from "@/components/ui/button";
+import { useUser } from "../../../utils/use-user";
+import { useRequestStatus } from "../../../utils/request-status";
+import { RequestStatusDisplay } from "../../../components/RequestStatusDisplay";
+import { apiClient } from "../../../utils/enhanced-api-client";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -49,6 +53,8 @@ const fetchWikidataCityStats = async (city: string, country: string) => {
 };
 
 const Dash = () => {
+  const { user, loading: userLoading } = useUser();
+  const { status, error, loading: statusLoading, refreshStatus, setError } = useRequestStatus(user?.id);
 
   const [cities, setCities] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
@@ -107,7 +113,6 @@ const Dash = () => {
     }
   }, [places, formData.city, formData.country]);
 
-
   const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -121,71 +126,64 @@ const Dash = () => {
     }));
   }
 
-  const handleUseLocationClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleUseLocationClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const getNearbyPlaces = async () => {
-      const response = await fetch('/api/getNearbyPlaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: formData.type.toLowerCase(),
-          lat: latLng[0],
-          lng: latLng[1]
-        }),
-      });
-      const data = await response.json();
-      const places = [];
-      for (let i = 0; i < data.places.length; i++) {
-        let placeName = data.places[i].displayName.text;
-        let place = new Place(
-          data.places[i].name.split("/")[1],
-          data.places[i].formattedAddress,
-          placeName,
-          data.places[i].location.latitude,
-          data.places[i].location.longitude,
-          data.places[i].rating,
-          data.places[i].userRatingCount,
-          data.places[i].websiteUri,
-          data.places[i].types.join(", "),
-          data.places[i].nationalPhoneNumber,
-          IsCloseMatch(formData.name, placeName)
-        );
-        places.push(place);
-      }
-      return places;
-    }
-
+    
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
+      navigator.geolocation.getCurrentPosition(async (position) => {
         const { latitude, longitude } = position.coords;
         setLatLng([latitude, longitude]);
         setZoom(15);
 
-      });
+        try {
+          const data = await apiClient.getNearbyPlaces({
+            type: formData.type.toLowerCase(),
+            lat: latitude,
+            lng: longitude
+          }, setError);
 
-      getNearbyPlaces().then(places => {
-        setPlaces(places);
-
+          const places = [];
+          for (let i = 0; i < data.places.length; i++) {
+            let placeName = data.places[i].displayName.text;
+            let place = new Place(
+              data.places[i].name.split("/")[1],
+              data.places[i].formattedAddress,
+              placeName,
+              data.places[i].location.latitude,
+              data.places[i].location.longitude,
+              data.places[i].rating,
+              data.places[i].userRatingCount,
+              data.places[i].websiteUri,
+              data.places[i].types.join(", "),
+              data.places[i].nationalPhoneNumber,
+              IsCloseMatch(formData.name, placeName)
+            );
+            places.push(place);
+          }
+          setPlaces(places);
+          
+          // Refresh status after successful request
+          await refreshStatus();
+        } catch (error) {
+          console.error('Error fetching nearby places:', error);
+          // Error is already handled by the API client
+        }
       });
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
   }
 
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const getGmapsPlaces = async () => {
-      const response = await fetch('/api/getGmapsPlaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: formData.type.toLowerCase(),
-          city: formData.city,
-          country: formData.country,
-          postCode: formData.postcode,
-        }),
-      });
-      const data = await response.json();
+    
+    try {
+      const data = await apiClient.getGmapsPlaces({
+        type: formData.type.toLowerCase(),
+        city: formData.city,
+        country: formData.country,
+        postCode: formData.postcode,
+      }, setError);
 
       const places = [];
       for (let i = 0; i < data.places.length; i++) {
@@ -203,21 +201,21 @@ const Dash = () => {
           data.places[i].types.join(", "),
           data.places[i].nationalPhoneNumber,
           IsCloseMatch(formData.name, placeName)
-
         );
         places.push(place);
       }
-      return places;
-    }
-
-    getGmapsPlaces().then(places => {
       setPlaces(places);
       if (places.length > 0) {
         setLatLng([places[0].Latitude, places[0].Longitude]);
         setZoom(15); // Set zoom level to 10 for better visibility
       }
-    });
-    // Add your form submission logic here
+      
+      // Refresh status after successful request
+      await refreshStatus();
+    } catch (error) {
+      console.error('Error fetching places:', error);
+      // Error is already handled by the API client
+    }
   };
 
   const downloadCsv = () => {
@@ -230,7 +228,6 @@ const Dash = () => {
     a.download = 'places.csv';
     a.click();
   }
-  
 
   const infoWindowContent = (place: Place) => {
     return (
@@ -244,14 +241,36 @@ const Dash = () => {
     );
   }
 
+  // Show loading state while user is being fetched
+  if (userLoading) {
+    return (
+      <div className="text-text bg-gradient-to-b from-slate-800 to-violet-800 h-full flex flex-col align-middle items-center text-center">
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-text">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   return <>
     <div className="text-text bg-gradient-to-b from-slate-800 to-violet-800 h-full flex flex-col align-middle items-center text-center">
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
         <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Search</h2>
+        
+        
+        {error?.type === 'limit_exceeded' ? (
+          <div className="w-full max-w-4xl">
+            <RequestStatusDisplay
+              status={status}
+              error={error}
+              loading={statusLoading}
+              onRefreshStatus={refreshStatus}
+              onClearError={() => setError(null)}
+            />
+          </div>
+        ) : (
         <div className="flex flex-row items-center justify-evenly w-full p-4">
           <form onSubmit={handleFormSubmit}>
-
-
             <div className="mb-4">
               <label htmlFor="country" className="block text-lg font-semibold text-text text-left">Country:</label>
               <ComboboxDropdown
@@ -260,7 +279,6 @@ const Dash = () => {
                 keys={countries}
                 onChange={(value: string) => handleFormChange({ target: { name: "country", value } } as React.ChangeEvent<HTMLInputElement>)}
               />
-
             </div>
 
             <div className="mb-4">
@@ -320,9 +338,9 @@ const Dash = () => {
                 />
               </APIProvider>
             }
-
           </div>
         </div>
+        )}
       </section>
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
         {places.length > 0 ? <DataTable columns={columns} data={places} /> : <div className="text-text text-2xl font-semibold"></div>}

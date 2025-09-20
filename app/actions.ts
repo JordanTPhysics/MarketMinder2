@@ -141,3 +141,63 @@ export const signOutAction = async () => {
   await supabase.auth.signOut();
   return redirect("/sign-in");
 };
+
+export const updateUserSubscriptionAction = async (planName: string, subscriptionId: number) => {
+  const supabase = await createClient();
+  
+  // Get the current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+  if (userError || !user) {
+    return encodedRedirect("error", "/protected/upgrade", "User not authenticated");
+  }
+
+  try {
+    // Check if user_profiles record exists
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('Error fetching user profile:', fetchError);
+      return encodedRedirect("error", "/protected/upgrade", "Failed to fetch user data");
+    }
+
+    if (existingRecord) {
+      // Update existing record
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({
+          subscription_id: subscriptionId,
+        })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('Error updating user subscription:', updateError);
+        return encodedRedirect("error", "/protected/upgrade", "Failed to update subscription");
+      }
+    } else {
+      // Create new record
+      const { error: insertError } = await supabase
+        .from('user_profiles')
+        .insert({
+          user_id: user.id,
+          subscription_id: subscriptionId,
+        });
+
+      if (insertError) {
+        console.error('Error creating user profile:', insertError);
+        return encodedRedirect("error", "/protected/upgrade", "Failed to create user profile");
+      }
+    }
+
+
+    return encodedRedirect("success", "/protected/payment-success", `Successfully upgraded to ${planName} plan!`);
+
+  } catch (error) {
+    console.error('Error updating user subscription:', error);
+    return encodedRedirect("error", "/protected/upgrade", "An unexpected error occurred");
+  }
+};

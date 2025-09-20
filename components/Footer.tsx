@@ -23,7 +23,7 @@ export default function Footer() {
           <Link href='https://tailwindcss.com/' className='mx-auto' target='_blank'><RiTailwindCssLine size={size} color="turquoise" /></Link>
         </div>
       </div>
-      <div className='mx-auto'>© 2025 MarketMinder
+      <div className='mx-auto'>© 2025 MarkitMinder
         <div className='flex flex-row'>
           <Link href='https://github.com/JordanTPhysics' className='mx-auto' target='_blank'><FaGithub size={size} color={iconColor} /></Link>
 
