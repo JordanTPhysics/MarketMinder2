@@ -26,7 +26,18 @@ const PaymentSuccessPage = () => {
         const success = searchParams.get('success');
         const plan = searchParams.get('plan');
 
+        // Debug logging
+        console.log('🔍 Payment Success Page Debug Info:');
+        console.log('URL Search Params:', {
+          sessionId,
+          success,
+          plan,
+          allParams: Object.fromEntries(searchParams.entries())
+        });
+        console.log('Current URL:', window.location.href);
+
         if (success === 'true' && sessionId) {
+          console.log('✅ Valid payment session detected, calling verify-payment API...');
           // Call server action to verify and update subscription
           const response = await fetch('/api/verify-payment', {
             method: 'POST',
@@ -39,7 +50,9 @@ const PaymentSuccessPage = () => {
             }),
           });
 
+          console.log('📡 API Response Status:', response.status);
           const result = await response.json();
+          console.log('📡 API Response Data:', result);
 
           if (result.success) {
             setPaymentResult({
@@ -54,18 +67,20 @@ const PaymentSuccessPage = () => {
             });
           }
         } else if (success === 'false') {
+          console.log('❌ Payment was cancelled or failed');
           setPaymentResult({
             success: false,
             error: 'Payment was cancelled or failed'
           });
         } else {
+          console.log('❌ Invalid payment session - missing required parameters');
           setPaymentResult({
             success: false,
             error: 'Invalid payment session'
           });
         }
       } catch (error) {
-        console.error('Payment processing error:', error);
+        console.error('💥 Payment processing error:', error);
         setPaymentResult({
           success: false,
           error: 'An unexpected error occurred while processing your payment'

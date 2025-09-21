@@ -5,6 +5,9 @@ import { Check, Star, Zap, Crown } from 'lucide-react';
 
 const PricingPage = () => {
   const handlePlanClick = (planName: string) => {
+    // Generate a unique session ID for tracking
+    const sessionId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     // Redirect to Stripe payment interface based on plan
     switch (planName) {
       case 'Free':
@@ -14,20 +17,25 @@ const PricingPage = () => {
       case 'Professional':
         // Redirect to Stripe checkout for Professional plan with success URL
         const professionalUrl = new URL('https://buy.stripe.com/eVqcN6eu8c7o9J1gNh67S01');
-        professionalUrl.searchParams.set('success_url', `${window.location.origin}/protected/payment-success?success=true&plan=Professional`);
+        professionalUrl.searchParams.set('success_url', `${window.location.origin}/protected/payment-success?success=true&plan=Professional&session_id=${sessionId}`);
         professionalUrl.searchParams.set('cancel_url', `${window.location.origin}/protected/upgrade?success=false`);
+        
+        console.log('🔍 Stripe URL being generated:', professionalUrl.toString());
+        console.log('🔍 Success URL will be:', `${window.location.origin}/protected/payment-success?success=true&plan=Professional&session_id=${sessionId}`);
+        console.log('🔍 Generated session ID:', sessionId);
+        
         window.location.href = professionalUrl.toString();
         break;
       case 'Enterprise':
         // Redirect to Stripe checkout for Enterprise plan with success URL
         const enterpriseUrl = new URL('https://buy.stripe.com/enterprise-plan');
-        enterpriseUrl.searchParams.set('success_url', `${window.location.origin}/protected/payment-success?success=true&plan=Enterprise`);
+        enterpriseUrl.searchParams.set('success_url', `${window.location.origin}/protected/payment-success?success=true&plan=Enterprise&session_id=${sessionId}`);
         enterpriseUrl.searchParams.set('cancel_url', `${window.location.origin}/protected/upgrade?success=false`);
         window.location.href = enterpriseUrl.toString();
         break;
       case 'Test_Product':
         const testProductUrl = new URL('https://buy.stripe.com/7sY28s2Lq6N44oHeF967S02');
-        testProductUrl.searchParams.set('success_url', `${window.location.origin}/protected/payment-success?success=true&plan=Test_Product`);
+        testProductUrl.searchParams.set('success_url', `${window.location.origin}/protected/payment-success?success=true&plan=Test_Product&session_id=${sessionId}`);
         testProductUrl.searchParams.set('cancel_url', `${window.location.origin}/protected/upgrade?success=false`);
         window.location.href = testProductUrl.toString();
         break;

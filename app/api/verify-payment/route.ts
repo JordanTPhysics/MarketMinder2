@@ -27,7 +27,13 @@ export async function POST(request: NextRequest) {
     const body: PaymentVerificationRequest = await request.json();
     const { sessionId, plan } = body;
 
+    console.log('🔍 Verify Payment API Debug Info:');
+    console.log('Request body:', body);
+    console.log('Session ID:', sessionId);
+    console.log('Plan:', plan);
+
     if (!sessionId || !plan) {
+      console.log('❌ Missing required parameters');
       return NextResponse.json(
         { success: false, error: 'Missing session ID or plan' },
         { status: 400 }
@@ -48,9 +54,12 @@ export async function POST(request: NextRequest) {
 
     // In a real implementation, you would verify the payment with Stripe here
     // For now, we'll simulate a successful verification
+    console.log('🔍 Verifying Stripe payment...');
     const paymentVerified = await verifyStripePayment(sessionId);
+    console.log('🔍 Payment verification result:', paymentVerified);
     
     if (!paymentVerified) {
+      console.log('❌ Payment verification failed');
       return NextResponse.json(
         { success: false, error: 'Payment verification failed' },
         { status: 400 }
