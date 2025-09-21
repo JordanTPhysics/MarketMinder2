@@ -343,6 +343,10 @@ const Dash = () => {
         )}
       </section>
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
+      <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Results</h2>
+      <span className="text-text text-lg">
+        Data may not persist if you refresh the page, download csv to make sure you keep any results you need.
+      </span>
         {places.length > 0 ? <DataTable columns={columns} data={places} /> : <div className="text-text text-2xl font-semibold"></div>}
         {places.length > 0 ? <button className="px-6 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300" onClick={downloadCsv}>Download CSV</button> : <div></div>}
         {places.length > 0 ? (
