@@ -19,9 +19,9 @@ const PLAN_NAMES: Record<number, string> = {
 };
 
 export default function PaymentSuccessPage() {
-  const [status, setStatus] = useState<string>("pending");
   const [subscriptionId, setSubscriptionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState("")
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -33,7 +33,6 @@ export default function PaymentSuccessPage() {
         } = await supabase.auth.getUser();
 
         if (userError || !user) {
-          setStatus("not-logged-in");
           setLoading(false);
           return;
         }
@@ -47,7 +46,6 @@ export default function PaymentSuccessPage() {
 
         if (profileError) {
           console.error("Profile error:", profileError);
-          setStatus("error");
           setLoading(false);
           return;
         }
