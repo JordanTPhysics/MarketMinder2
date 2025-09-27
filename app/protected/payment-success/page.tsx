@@ -1,97 +1,82 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
-interface PaymentResult {
-  success: boolean;
-  plan?: string;
-  message?: string;
-  error?: string;
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-const PaymentSuccessPage = () => {
-  const searchParams = useSearchParams();
-  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
+// Plan names based on subscription ID
+const PLAN_NAMES: Record<number, string> = {
+  1: "Free",
+  2: "Professional", 
+  3: "Enterprise"
+};
+
+export default function PaymentSuccessPage() {
+  const [status, setStatus] = useState<string>("pending");
+  const [subscriptionId, setSubscriptionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const processPayment = async () => {
+    const checkStatus = async () => {
       try {
-        // Get payment parameters from URL
-        const sessionId = searchParams.get('session_id');
-        const success = searchParams.get('success');
-        const plan = searchParams.get('plan');
+        // Get the logged-in user
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
 
-        // Debug logging
-        console.log('🔍 Payment Success Page Debug Info:');
-        console.log('URL Search Params:', {
-          sessionId,
-          success,
-          plan,
-          allParams: Object.fromEntries(searchParams.entries())
-        });
-        console.log('Current URL:', window.location.href);
+        if (userError || !user) {
+          setStatus("not-logged-in");
+          setLoading(false);
+          return;
+        }
 
-        if (success === 'true' && sessionId) {
-          console.log('✅ Valid payment session detected, calling verify-payment API...');
-          // Call server action to verify and update subscription
-          const response = await fetch('/api/verify-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              sessionId,
-              plan: plan || 'Professional'
-            }),
-          });
+        // Get user profile subscription_id
+        const { data: profileData, error: profileError } = await supabase
+          .from("user_profiles")
+          .select("subscription_id")
+          .eq("user_id", user.id)
+          .single();
 
-          console.log('📡 API Response Status:', response.status);
-          const result = await response.json();
-          console.log('📡 API Response Data:', result);
+        if (profileError) {
+          console.error("Profile error:", profileError);
+          setStatus("error");
+          setLoading(false);
+          return;
+        }
 
-          if (result.success) {
-            setPaymentResult({
-              success: true,
-              plan: result.plan,
-              message: `Welcome to ${result.plan}! Your account has been successfully upgraded.`
-            });
+        if (profileData) {
+          setSubscriptionId(profileData.subscription_id);
+
+          // Check if subscription is upgraded (not Free plan with ID 1)
+          if (profileData.subscription_id > 1) {
+            setStatus("active");
           } else {
-            setPaymentResult({
-              success: false,
-              error: result.error || 'Payment verification failed'
-            });
+            setStatus("pending");
+            // Retry in 3s until webhook updates
+            setTimeout(checkStatus, 3000);
           }
-        } else if (success === 'false') {
-          console.log('❌ Payment was cancelled or failed');
-          setPaymentResult({
-            success: false,
-            error: 'Payment was cancelled or failed'
-          });
         } else {
-          console.log('❌ Invalid payment session - missing required parameters');
-          setPaymentResult({
-            success: false,
-            error: 'Invalid payment session'
-          });
+          setStatus("pending");
+          setTimeout(checkStatus, 3000);
         }
       } catch (error) {
-        console.error('💥 Payment processing error:', error);
-        setPaymentResult({
-          success: false,
-          error: 'An unexpected error occurred while processing your payment'
-        });
+        console.error("Error checking status:", error);
+        setStatus("error");
       } finally {
         setLoading(false);
       }
     };
 
-    processPayment();
-  }, [searchParams]);
+    checkStatus();
+  }, []);
 
   if (loading) {
     return (
@@ -108,7 +93,7 @@ const PaymentSuccessPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-800 to-violet-800 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        {paymentResult?.success ? (
+        {status === "active" && subscriptionId ? (
           <div className="text-center">
             {/* Success State */}
             <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border">
@@ -117,13 +102,13 @@ const PaymentSuccessPage = () => {
                 Payment Successful!
               </h1>
               <p className="text-xl text-text/80 mb-6">
-                {paymentResult.message}
+                Your subscription has been activated successfully.
               </p>
               
               {/* Plan Details */}
               <div className="bg-foreground/20 rounded-xl p-6 mb-8">
                 <h3 className="text-lg font-semibold text-text mb-4">
-                  Your New Plan: {paymentResult.plan}
+                  Your New Plan: {PLAN_NAMES[subscriptionId]}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-text/80">
                   <div className="flex items-center">
@@ -174,28 +159,61 @@ const PaymentSuccessPage = () => {
               </div>
             </div>
           </div>
+        ) : status === "pending" ? (
+          <div className="text-center">
+            <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border">
+              <Loader2 className="w-20 h-20 text-text animate-spin mx-auto mb-6" />
+              <h1 className="text-4xl font-bold text-text mb-4 font-serif">
+                Processing Your Payment
+              </h1>
+              <p className="text-xl text-text/80 mb-6">
+                Please wait while we activate your subscription...
+              </p>
+              <div className="text-sm text-text/60">
+                This usually takes just a few moments.
+              </div>
+            </div>
+          </div>
+        ) : status === "not-logged-in" ? (
+          <div className="text-center">
+            <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border">
+              <XCircle className="w-20 h-20 text-danger mx-auto mb-6" />
+              <h1 className="text-4xl font-bold text-text mb-4 font-serif">
+                Please Sign In
+              </h1>
+              <p className="text-xl text-text/80 mb-6">
+                You need to be signed in to view your subscription status.
+              </p>
+              <Button asChild size="lg" className="w-full">
+                <Link href="/sign-in">
+                  Sign In
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Link>
+              </Button>
+            </div>
+          </div>
         ) : (
           <div className="text-center">
             {/* Error State */}
             <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border">
               <XCircle className="w-20 h-20 text-danger mx-auto mb-6" />
               <h1 className="text-4xl font-bold text-text mb-4 font-serif">
-                Payment Failed
+                Something Went Wrong
               </h1>
               <p className="text-xl text-text/80 mb-6">
-                {paymentResult?.error || 'Something went wrong with your payment'}
+                We're having trouble verifying your payment status.
               </p>
               
               <div className="space-y-4">
                 <Button asChild size="lg" className="w-full">
-                  <Link href="/protected/upgrade">
-                    Try Again
+                  <Link href="/protected/dashboard">
+                    Go to Dashboard
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="w-full">
-                  <Link href="/protected/dashboard">
-                    Back to Dashboard
+                  <Link href="/protected/upgrade">
+                    Try Again
                   </Link>
                 </Button>
               </div>
@@ -218,6 +236,4 @@ const PaymentSuccessPage = () => {
       </div>
     </div>
   );
-};
-
-export default PaymentSuccessPage;
+}

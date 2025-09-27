@@ -4,50 +4,38 @@ import React from 'react';
 import { Check, Star, Zap, Crown } from 'lucide-react';
 
 const PricingPage = () => {
-  const handlePlanClick = (planName: string) => {
-    // Generate a unique session ID for tracking
-    const sessionId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    // Redirect to Stripe payment interface based on plan
-    switch (planName) {
-      case 'Free':
-        // For free plan, just redirect to dashboard or show success message
-        window.location.href = '/protected/dashboard';
-        break;
-      case 'Professional':
-        // Redirect to Stripe checkout for Professional plan with success URL
-        const professionalUrl = new URL('https://buy.stripe.com/eVqcN6eu8c7o9J1gNh67S01');
-        professionalUrl.searchParams.set('success_url', `${window.location.origin}/protected/payment-success?success=true&plan=Professional&session_id=${sessionId}`);
-        professionalUrl.searchParams.set('cancel_url', `${window.location.origin}/protected/upgrade?success=false`);
-        
-        console.log('🔍 Stripe URL being generated:', professionalUrl.toString());
-        console.log('🔍 Success URL will be:', `${window.location.origin}/protected/payment-success?success=true&plan=Professional&session_id=${sessionId}`);
-        console.log('🔍 Generated session ID:', sessionId);
-        
-        window.location.href = professionalUrl.toString();
-        break;
-      case 'Enterprise':
-        // Redirect to Stripe checkout for Enterprise plan with success URL
-        const enterpriseUrl = new URL('https://buy.stripe.com/enterprise-plan');
-        enterpriseUrl.searchParams.set('success_url', `${window.location.origin}/protected/payment-success?success=true&plan=Enterprise&session_id=${sessionId}`);
-        enterpriseUrl.searchParams.set('cancel_url', `${window.location.origin}/protected/upgrade?success=false`);
-        window.location.href = enterpriseUrl.toString();
-        break;
-      case 'Test_Product':
-        const testProductUrl = new URL('https://buy.stripe.com/7sY28s2Lq6N44oHeF967S02');
-        testProductUrl.searchParams.set('success_url', `${window.location.origin}/protected/payment-success?success=true&plan=Test_Product&session_id=${sessionId}`);
-        testProductUrl.searchParams.set('cancel_url', `${window.location.origin}/protected/upgrade?success=false`);
-        window.location.href = testProductUrl.toString();
-        break;
-      default:
-        console.log('Unknown plan:', planName);
+  const handlePlanClick = async (planName: string, priceId: string) => {
+    // Don't allow clicking on Enterprise plan
+    if (planName === "Enterprise") {
+      return;
     }
-  };
+  
+      try {
+        const res = await fetch("/api/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: planName, priceId }),
+        });
+  
+        const data = await res.json();
+  
+        if (data.url) {
+          // Stripe Checkout URL
+          window.location.href = data.url;
+        } else {
+          console.error("❌ Checkout error:", data.error);
+        }
+      } catch (err) {
+        console.error("❌ Network or server error:", err);
+      }
+    };
+
 
   const plans = [
     {
       name: "Free",
       price: "$0",
+      priceId: "none",
       period: "",
       description: "Perfect for getting started with MarkitMinder",
       icon: <Star className="w-8 h-8 text-yellow-400" />,
@@ -64,6 +52,7 @@ const PricingPage = () => {
     {
       name: "Professional",
       price: "$99",
+      priceId: "price_1S73djLCNjnWAwZSVFfs1Yhk",
       period: "per month",
       description: "For serious traders and investors",
       icon: <Zap className="w-8 h-8 text-blue-400" />,
@@ -80,6 +69,7 @@ const PricingPage = () => {
       name: "Enterprise",
       price: "$99",
       period: "per month",
+      priceId: "none",
       description: "For teams and institutions",
       icon: <Crown className="w-8 h-8 text-purple-400" />,
       features: [
@@ -100,6 +90,7 @@ const PricingPage = () => {
     {
       name: "Test_Product",
       price: "$0",
+      priceId: "price_1S9oNvLCNjnWAwZSZ9v3ScuO",
       period: "",
       description: "For testing purposes",
       icon: <Star className="w-8 h-8 text-yellow-400" />,
@@ -134,11 +125,13 @@ const PricingPage = () => {
           {plans.map((plan, index) => (
             <button
               key={plan.name}
-              onClick={() => handlePlanClick(plan.name)}
+              onClick={() => handlePlanClick(plan.name, plan.priceId!)}
               className={`relative bg-background/50 backdrop-blur-sm rounded-2xl p-8 border-2 ${plan.color} ${
-                plan.popular 
-                  ? 'ring-2 ring-blue-500/50 shadow-2xl shadow-blue-500/20 scale-105' 
-                  : 'hover:scale-105 hover:shadow-xl hover:shadow-violet-500/20'
+                plan.name === "Enterprise" 
+                  ? 'opacity-50 cursor-not-allowed grayscale' 
+                  : plan.popular 
+                    ? 'ring-2 ring-blue-500/50 shadow-2xl shadow-blue-500/20 scale-105' 
+                    : 'hover:scale-105 hover:shadow-xl hover:shadow-violet-500/20'
               } transition-all duration-300 ease-in-out cursor-pointer w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
             >
               {/* Popular Badge */}
@@ -146,6 +139,15 @@ const PricingPage = () => {
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <div className="bg-blue-500 text-white px-6 py-2 rounded-full text-sm font-semibold">
                     Most Popular
+                  </div>
+                </div>
+              )}
+
+              {/* Coming Soon Badge for Enterprise */}
+              {plan.name === "Enterprise" && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <div className="bg-gray-500 text-white px-6 py-2 rounded-full text-sm font-semibold">
+                    Coming Soon
                   </div>
                 </div>
               )}
@@ -188,11 +190,16 @@ const PricingPage = () => {
               {/* Click to select indicator */}
               <div className="text-center mt-6">
                 <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
-                  plan.popular 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-foreground/20 text-text'
+                  plan.name === 'Enterprise'
+                    ? 'bg-gray-500 text-white cursor-not-allowed'
+                    : plan.popular 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-foreground/20 text-text'
                 }`}>
-                  Click to {plan.name === 'Free' ? 'Get Started' : 'Subscribe'}
+                  {plan.name === 'Enterprise' 
+                    ? 'Coming Soon' 
+                    : `Click to ${plan.name === 'Free' ? 'Get Started' : 'Subscribe'}`
+                  }
                 </div>
               </div>
             </button>
@@ -265,5 +272,6 @@ const PricingPage = () => {
     </div>
   );
 };
+
 
 export default PricingPage;
