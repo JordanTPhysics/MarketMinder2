@@ -1,9 +1,11 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
 // Init Stripe
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-08-27.basil',
+});
 
 // Init Supabase (Service Role key needed!)
 const supabase = createClient(
@@ -13,88 +15,77 @@ const supabase = createClient(
 
 // Subscription ID mapping (Free=1, Professional=2, Enterprise=3)
 const SUBSCRIPTION_IDS: Record<string, number> = {
-  'price_professional': 2, // Replace with your actual price ID
-  'price_enterprise': 3,   // Replace with your actual price ID
+  'price_1S73djLCNjnWAwZSVFfs1Yhk': 2, // Professional plan
+  'price_1S9oNvLCNjnWAwZSZ9v3ScuO': 2, // Test product (also Professional)
 };
 
-// Disable Next.js body parser so we can verify raw body
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
-async function buffer(readable: any) {
-  const chunks: Buffer[] = [];
-  for await (const chunk of readable) {
-    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
-  }
-  return Buffer.concat(chunks);
-}
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res.status(405).end("Method Not Allowed");
-  }
-
-  const buf = await buffer(req);
-  const sig = req.headers["stripe-signature"] as string;
-
-  let event: Stripe.Event;
-
+export async function POST(req: NextRequest) {
   try {
-    event = stripe.webhooks.constructEvent(
-      buf,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET as string
-    );
-  } catch (err: any) {
-    console.error("Webhook signature verification failed:", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
+    const body = await req.text();
+    const sig = req.headers.get("stripe-signature");
 
-  try {
-    switch (event.type) {
-      case "checkout.session.completed": {
-        await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
-        break;
-      }
-
-      case "customer.subscription.created": {
-        await handleSubscriptionCreated(event.data.object as Stripe.Subscription);
-        break;
-      }
-
-      case "customer.subscription.updated": {
-        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
-        break;
-      }
-
-      case "customer.subscription.deleted": {
-        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
-        break;
-      }
-
-      case "invoice.payment_succeeded": {
-        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
-        break;
-      }
-
-      case "invoice.payment_failed": {
-        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
-        break;
-      }
-
-      default:
-        console.log(`Unhandled event type ${event.type}`);
+    if (!sig) {
+      return NextResponse.json({ error: "No signature" }, { status: 400 });
     }
-  } catch (err) {
-    console.error("Webhook handling failed:", err);
-    return res.status(500).send("Webhook handler error");
-  }
 
-  res.json({ received: true });
+    let event: Stripe.Event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    } catch (err: any) {
+      console.error("Webhook signature verification failed:", err.message);
+      return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+    }
+
+    try {
+      switch (event.type) {
+        case "checkout.session.completed": {
+          await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
+          break;
+        }
+
+        case "customer.subscription.created": {
+          await handleSubscriptionCreated(event.data.object as Stripe.Subscription);
+          break;
+        }
+
+        case "customer.subscription.updated": {
+          await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+          break;
+        }
+
+        case "customer.subscription.deleted": {
+          await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+          break;
+        }
+
+        case "invoice.payment_succeeded": {
+          await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
+          break;
+        }
+
+        case "invoice.payment_failed": {
+          await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+          break;
+        }
+
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+    } catch (err) {
+      console.error("Webhook handling failed:", err);
+      return NextResponse.json({ error: "Webhook handler error" }, { status: 500 });
+    }
+
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("Webhook error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 // Helper function to update user subscription in user_profiles table
