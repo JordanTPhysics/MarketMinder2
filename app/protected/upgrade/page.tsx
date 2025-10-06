@@ -118,6 +118,7 @@ const PricingPage = () => {
             Unlock the full potential of MarkitMinder with our flexible pricing plans. 
             From individual traders to enterprise teams, we have the perfect solution for you.
           </p>
+
         </div>
 
         {/* Pricing Cards */}

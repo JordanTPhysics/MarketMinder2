@@ -1,15 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/client";
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // Plan names based on subscription ID
 const PLAN_NAMES: Record<number, string> = {
@@ -24,8 +19,15 @@ export default function PaymentSuccessPage() {
   const [status, setStatus] = useState("")
 
   useEffect(() => {
+    let retryId: ReturnType<typeof setTimeout> | null = null;
+
     const checkStatus = async () => {
+      // Create Supabase client
+      const supabase = createClient();
+      
       try {
+        console.log("🔍 Checking payment status...");
+        
         // Get the logged-in user
         const {
           data: { user },
@@ -33,9 +35,13 @@ export default function PaymentSuccessPage() {
         } = await supabase.auth.getUser();
 
         if (userError || !user) {
+          console.log("❌ User not authenticated:", userError);
+          setStatus("not-logged-in");
           setLoading(false);
           return;
         }
+
+        console.log("✅ User authenticated:", user.id);
 
         // Get user profile subscription_id
         const { data: profileData, error: profileError } = await supabase
@@ -45,35 +51,48 @@ export default function PaymentSuccessPage() {
           .single();
 
         if (profileError) {
-          console.error("Profile error:", profileError);
+          console.error("❌ Profile error:", profileError);
+          setStatus("error");
           setLoading(false);
           return;
         }
 
+        console.log("📊 Profile data:", profileData);
+
         if (profileData) {
           setSubscriptionId(profileData.subscription_id);
+          console.log("🆔 Current subscription ID:", profileData.subscription_id);
 
           // Check if subscription is upgraded (not Free plan with ID 1)
           if (profileData.subscription_id > 1) {
+            console.log("🎉 Subscription upgraded! Status: active");
             setStatus("active");
+            setLoading(false);
           } else {
+            console.log("⏳ Still on free plan, waiting for webhook...");
             setStatus("pending");
             // Retry in 3s until webhook updates
-            setTimeout(checkStatus, 3000);
+            setLoading(false);
+            retryId = setTimeout(checkStatus, 3000);
           }
         } else {
-          setStatus("pending");
-          setTimeout(checkStatus, 3000);
+          console.log("❌ No profile data found");
+          setStatus("error");
+          setLoading(false);
         }
       } catch (error) {
-        console.error("Error checking status:", error);
+        console.error("❌ Error checking status:", error);
         setStatus("error");
-      } finally {
         setLoading(false);
       }
     };
 
     checkStatus();
+    return () => {
+      if (retryId) {
+        clearTimeout(retryId);
+      }
+    };
   }, []);
 
   if (loading) {
@@ -91,6 +110,15 @@ export default function PaymentSuccessPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-800 to-violet-800 py-12 px-4">
       <div className="max-w-2xl mx-auto">
+        {/* Debug info - remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 rounded text-sm">
+            <strong>Debug Info:</strong><br/>
+            Status: {status}<br/>
+            Subscription ID: {subscriptionId}<br/>
+            Loading: {loading.toString()}
+          </div>
+        )}
         {status === "active" && subscriptionId ? (
           <div className="text-center">
             {/* Success State */}

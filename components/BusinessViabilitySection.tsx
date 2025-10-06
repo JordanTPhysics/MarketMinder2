@@ -32,6 +32,10 @@ const MetricBar: React.FC<MetricBarProps> = ({ label, value, max = 100, suffix =
 interface BusinessViabilitySectionProps {
   name: string;
   averageReviewScore: number;
+  averageBusinessScore: number;
+  maxBusinessScore: number;
+  userBusinessName: string;
+  places: any[];
   gdp?: number;
   population?: number;
   populationDensity?: number;
@@ -40,6 +44,10 @@ interface BusinessViabilitySectionProps {
 
 const BusinessViabilitySection: React.FC<BusinessViabilitySectionProps> = ({
   averageReviewScore,
+  averageBusinessScore,
+  maxBusinessScore,
+  userBusinessName,
+  places,
   gdp,
   population,
   populationDensity,
@@ -72,6 +80,24 @@ const BusinessViabilitySection: React.FC<BusinessViabilitySectionProps> = ({
 
     loadData();
   }, [name]);
+
+  // Find user's business in results
+  const userBusiness = userBusinessName 
+    ? places.find(place => 
+        place.PlaceName.toLowerCase().includes(userBusinessName.toLowerCase()) ||
+        userBusinessName.toLowerCase().includes(place.PlaceName.toLowerCase())
+      )
+    : null;
+
+  // Calculate average business score as percentage of max
+  const averageBusinessScorePercentage = maxBusinessScore > 0 
+    ? (averageBusinessScore / maxBusinessScore) * 100 
+    : 0;
+
+  // Calculate user's business score as percentage of max
+  const userBusinessScorePercentage = userBusiness && maxBusinessScore > 0
+    ? ((userBusiness.Rating * userBusiness.RatingCount) / maxBusinessScore) * 100
+    : 0;
 
   if (loading) {
     return (
@@ -131,15 +157,18 @@ const BusinessViabilitySection: React.FC<BusinessViabilitySectionProps> = ({
     { label: "Population", value: totalPopulation, max: 20000000, suffix: "" },
     populationDensity !== undefined ? { label: "Population Density (/km²)", value: populationDensity, max: 20000, suffix: "" } : undefined,
     { label: "Review Score", value: averageReviewScore, max: 5, suffix: "/5" },
+    { label: "Average Business Score", value: averageBusinessScorePercentage, max: 100, suffix: "%" },
+    userBusiness ? { label: "Your Score", value: userBusinessScorePercentage, max: 100, suffix: "%" } : undefined,
     ...ageDemographics,
   ].filter(Boolean) as MetricBarProps[];
 
   // Simple overall score calculation (mock, can be improved)
   const overallScore = Math.round((
-    (gdp ? Math.min(gdp / 100000, 1) * 0.2 : 0.1) +
-    (populationDensity ? Math.min(populationDensity / 20000, 1) * 0.2 : 0.1) +
-    (averageReviewScore / 5 * 0.3) +
-    0.3
+    (gdp ? Math.min(gdp / 100000, 1) * 0.15 : 0.1) +
+    (populationDensity ? Math.min(populationDensity / 20000, 1) * 0.15 : 0.1) +
+    (averageReviewScore / 5 * 0.25) +
+    (Math.min(averageBusinessScore / 1000, 1) * 0.25) +
+    0.25
   ) * 100);
 
   return (
@@ -150,6 +179,21 @@ const BusinessViabilitySection: React.FC<BusinessViabilitySectionProps> = ({
           <MetricBar key={metric.label} {...metric} />
         ))}
       </div>
+      
+      {/* Show note if business name provided but no match found */}
+      {userBusinessName && !userBusiness && (
+        <div className="mt-6 p-4 bg-yellow-100 border border-yellow-400 rounded-lg">
+          <div className="text-yellow-800 font-semibold mb-2">Business Not Found</div>
+          <div className="text-yellow-700 text-sm">
+            "{userBusinessName}" was not found in the search results. This could mean:
+            <ul className="list-disc list-inside mt-2 ml-4">
+              <li>The business name doesn't match exactly</li>
+              <li>The business is not in the search area</li>
+              <li>The business type doesn't match your search criteria</li>
+            </ul>
+          </div>
+        </div>
+      )}
       {/* <div className="mt-6">
         <div className="font-semibold text-text mb-2">Notable Features:</div>
         <div className="flex flex-wrap gap-2">

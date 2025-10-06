@@ -24,12 +24,13 @@ type FormDropdownProps = {
     keys: string[];
     values: string[];
     onChange: (value: string) => void;
+    defaultValue?: string;
 }
 
-export function ComboboxDropdown({ type, keys, values, onChange }: FormDropdownProps) {
+export function ComboboxDropdown({ type, keys, values, onChange, defaultValue }: FormDropdownProps) {
   const [open, setOpen] = React.useState(false)
-  const [value, setValue] = React.useState("")
-  const [inputValue, setInputValue] = React.useState("")
+  const [value, setValue] = React.useState(defaultValue || "")
+  const [inputValue, setInputValue] = React.useState(defaultValue || "")
 
   // When user selects from the list
   const handleSelect = (currentValue: string) => {

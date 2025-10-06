@@ -53,13 +53,33 @@ const fetchWikidataCityStats = async (city: string, country: string) => {
 };
 
 const Dash = () => {
-  const { user, loading: userLoading } = useUser();
+  const { user, loading: userLoading, error: userError } = useUser();
   const { status, error, loading: statusLoading, refreshStatus, setError } = useRequestStatus(user?.id);
+
+  // Debug logging
+  console.log("Dashboard - User loading:", userLoading);
+  console.log("Dashboard - User:", user);
+  console.log("Dashboard - User error:", userError);
 
   const [cities, setCities] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [latLng, setLatLng] = useState<[number, number]>([20, 0]);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  // Add timeout to prevent infinite loading
+  useEffect(() => {
+    if (userLoading) {
+      const timeout = setTimeout(() => {
+        console.log("Loading timeout reached");
+        setLoadingTimeout(true);
+      }, 10000); // 10 second timeout
+
+      return () => clearTimeout(timeout);
+    } else {
+      setLoadingTimeout(false);
+    }
+  }, [userLoading]);
   const [zoom, setZoom] = useState<number>(2); 
   const [formData, setFormData] = useState<{
     type: string;
@@ -70,7 +90,7 @@ const Dash = () => {
   }>({
     type: "",
     name: "", // Default to an empty string
-    country: "",
+    country: "United Kingdom",
     city: "",
     postcode: "",
   });
@@ -104,7 +124,26 @@ const Dash = () => {
     if (countries.includes(formData.country)) {
       fetchCities();
     }
-  }, [formData.country]);
+  }, [formData.country, countries]);
+
+  // Fetch UK cities on initial load since UK is the default
+  useEffect(() => {
+    const fetchUKCities = async () => {
+      const response = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country: "United Kingdom" }),
+      });
+      const data = await response.json();
+      const cityNames = data.data.map((city: string) => city);
+      setCities(cityNames);
+    };
+    
+    // Only fetch if cities array is empty (initial load)
+    if (cities.length === 0) {
+      fetchUKCities();
+    }
+  }, []);
 
   useEffect(() => {
     // Fetch city stats from Wikidata when places are set and city/country are selected
@@ -219,8 +258,11 @@ const Dash = () => {
   };
 
   const downloadCsv = () => {
-    const csvHeaders = "Place Name,Address,Rating,Phone,Url";
-    const csvContent = places.map(place => `${place.PlaceName},${place.Address.replace(/,/g, " ")},${place.Rating},${place.Phone},${place.Url}`).join('\n');
+    const csvHeaders = "Place Name,Address,Rating,Review Count,Business Score,Phone,Url";
+    const csvContent = places.map(place => {
+      const businessScore = (place.Rating * place.RatingCount).toFixed(1);
+      return `${place.PlaceName},${place.Address.replace(/,/g, " ")},${place.Rating},${place.RatingCount},${businessScore},${place.Phone},${place.Url}`;
+    }).join('\n');
     const blob = new Blob([csvHeaders + '\n' + csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -242,11 +284,41 @@ const Dash = () => {
   }
 
   // Show loading state while user is being fetched
-  if (userLoading) {
+  if (userLoading && !loadingTimeout) {
     return (
       <div className="text-text bg-gradient-to-b from-slate-800 to-violet-800 h-full flex flex-col align-middle items-center text-center">
         <div className="flex items-center justify-center h-screen">
-          <div className="text-text">Loading...</div>
+          <div className="text-text">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-text mx-auto mb-4"></div>
+            Loading...
+            {userError && (
+              <div className="text-red-500 mt-2">
+                Error: {userError}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show timeout error if loading takes too long
+  if (loadingTimeout) {
+    return (
+      <div className="text-text bg-gradient-to-b from-slate-800 to-violet-800 h-full flex flex-col align-middle items-center text-center">
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-text">
+            <div className="text-red-500 mb-4">Loading Timeout</div>
+            <div className="text-sm mb-4">
+              Authentication is taking longer than expected. Please try refreshing the page.
+            </div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Refresh Page
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -258,25 +330,30 @@ const Dash = () => {
         <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Search</h2>
         
         
-        {error?.type === 'limit_exceeded' ? (
-          <div className="w-full max-w-4xl">
-            <RequestStatusDisplay
-              status={status}
-              error={error}
-              loading={statusLoading}
-              onRefreshStatus={refreshStatus}
-              onClearError={() => setError(null)}
-            />
-          </div>
-        ) : (
-        <div className="flex flex-row items-center justify-evenly w-full p-4">
-          <form onSubmit={handleFormSubmit}>
+        <div className="flex flex-row items-center justify-evenly w-full p-4 relative">
+          {/* Limit exceeded overlay */}
+          {error?.type === 'limit_exceeded' && (
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
+              <div className="bg-background/90 backdrop-blur-sm rounded-xl p-8 border border-border max-w-2xl mx-4">
+                <RequestStatusDisplay
+                  status={status}
+                  error={error}
+                  loading={statusLoading}
+                  onRefreshStatus={refreshStatus}
+                  onClearError={() => setError(null)}
+                />
+              </div>
+            </div>
+          )}
+          
+          <form onSubmit={handleFormSubmit} className={error?.type === 'limit_exceeded' ? 'pointer-events-none opacity-50' : ''}>
             <div className="mb-4">
               <label htmlFor="country" className="block text-lg font-semibold text-text text-left">Country:</label>
               <ComboboxDropdown
                 type="country"
                 values={countries}
                 keys={countries}
+                defaultValue="United Kingdom"
                 onChange={(value: string) => handleFormChange({ target: { name: "country", value } } as React.ChangeEvent<HTMLInputElement>)}
               />
             </div>
@@ -340,14 +417,18 @@ const Dash = () => {
             }
           </div>
         </div>
-        )}
       </section>
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
       <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Results</h2>
       <span className="text-text text-lg">
         Data may not persist if you refresh the page, download csv to make sure you keep any results you need.
       </span>
-        {places.length > 0 ? <DataTable columns={columns} data={places} /> : <div className="text-text text-2xl font-semibold"></div>}
+        {places.length > 0 ? (
+          <DataTable 
+            columns={columns} 
+            data={places.sort((a, b) => (b.Rating * b.RatingCount) - (a.Rating * a.RatingCount))} 
+          />
+        ) : <div className="text-text text-2xl font-semibold"></div>}
         {places.length > 0 ? <button className="px-6 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300" onClick={downloadCsv}>Download CSV</button> : <div></div>}
         {places.length > 0 ? (
           <BusinessViabilitySection
@@ -356,6 +437,18 @@ const Dash = () => {
                 ? places.reduce((acc, p) => acc + (typeof p.Rating === 'number' ? p.Rating : 0), 0) / places.length
                 : 0
             }
+            averageBusinessScore={
+              places.length > 0
+                ? places.reduce((acc, p) => acc + (p.Rating * p.RatingCount), 0) / places.length
+                : 0
+            }
+            maxBusinessScore={
+              places.length > 0
+                ? Math.max(...places.map(p => p.Rating * p.RatingCount))
+                : 0
+            }
+            userBusinessName={formData.name.trim()}
+            places={places}
             gdp={cityStats.gdp}
             population={cityStats.population}
             populationDensity={cityStats.populationDensity}

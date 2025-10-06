@@ -193,12 +193,22 @@ export const columns: ColumnDef<Place>[] = [
           className="text-white"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Review Count
+          Business Score
           <ArrowUpDown className="ml-2 h-4 w-4 text-white" />
         </button>
       )
 
-    }, accessorKey: "RatingCount",
+    }, 
+    accessorFn: (row) => row.Rating * row.RatingCount,
+    id: "businessScore",
+    cell: ({ cell }) => {
+      const score = cell.getValue<number>();
+      return (
+        <span className="font-semibold">
+          {score.toFixed(1)}
+        </span>
+      );
+    }
   },
   {
     header: ({ column }) => {

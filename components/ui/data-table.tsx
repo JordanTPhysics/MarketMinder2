@@ -121,21 +121,6 @@ export function DataTable<TData, TValue>({
                 </TableBody>
             </Table>
         </div>
-        <div className="flex items-center justify-end space-x-2 py-4">
-            <button
-                className="bg-foreground border-border border-2 rounded-md text-text p-2 smooth hover:scale-95 hover:bg-danger"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-            >
-                Previous
-            </button>
-            <button
-                className="bg-foreground border-border border-2 rounded-md text-text p-2 smooth hover:scale-95 hover:bg-success"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-            >
-                Next
-            </button>
-        </div>
+
     </div>
 }

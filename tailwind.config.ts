@@ -19,7 +19,9 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Work Sans', 'sans-serif'],
+        mono: ['Fira Code', 'monospace'],
+        display: ['Space Grotesk', 'sans-serif'],
         serif: ['Playfair Display', 'serif'],
     },
       boxShadow: {
