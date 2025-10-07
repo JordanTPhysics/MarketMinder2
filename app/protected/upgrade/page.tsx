@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Check, Star, Zap, Crown } from 'lucide-react';
+import { PiLockKeyFill } from "react-icons/pi";
 
 const PricingPage = () => {
   const handlePlanClick = async (planName: string, priceId: string) => {
@@ -52,7 +53,7 @@ const PricingPage = () => {
     {
       name: "Professional",
       price: "$99",
-      priceId: "price_1S73djLCNjnWAwZSVFfs1Yhk",
+      priceId: "price_1S0rriLCNjnWAwZSXmiJdjvs", // "price_1S73djLCNjnWAwZSVFfs1Yhk",
       period: "per month",
       description: "For serious traders and investors",
       icon: <Zap className="w-8 h-8 text-blue-400" />,
@@ -76,10 +77,8 @@ const PricingPage = () => {
         "Unlimited requests",
         "Premium market analysis",
         "24/7 phone support",
-        "Instant response times",
         "All advanced features",
         "Custom integrations",
-        "White-label options",
         "Dedicated account manager",
         "Custom data exports",
         "Team collaboration tools"
@@ -215,8 +214,8 @@ const PricingPage = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-text/80">
               <div className="flex items-center justify-center">
-                <Check className="w-5 h-5 text-success mr-2" />
-                <span>Secure data encryption</span>
+                <PiLockKeyFill className="w-5 h-5 text-success mr-2" />
+                <span>Your Data is safe and secure</span>
               </div>
               <div className="flex items-center justify-center">
                 <Check className="w-5 h-5 text-success mr-2" />
