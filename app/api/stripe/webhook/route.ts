@@ -17,6 +17,7 @@ const supabase = createClient(
 const SUBSCRIPTION_IDS: Record<string, number> = {
   'price_1S73djLCNjnWAwZSVFfs1Yhk': 2, // Professional plan
   'price_1S9oNvLCNjnWAwZSZ9v3ScuO': 2, // Test product (also Professional)
+  'price_1S0rriLCNjnWAwZSXmiJdjvs': 2, // Professional plan (Testing)
 };
 
 export async function POST(req: NextRequest) {
