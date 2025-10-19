@@ -21,6 +21,8 @@ export class Place {
   Types: string;
   Phone: string;
   Selected: boolean = false;
+  OpenHours: string = "";
+  
 
   constructor(
     PlaceID: string,

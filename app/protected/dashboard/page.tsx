@@ -17,6 +17,8 @@ import { useUser } from "../../../utils/use-user";
 import { useRequestStatus } from "../../../utils/request-status";
 import { RequestStatusDisplay } from "../../../components/RequestStatusDisplay";
 import { apiClient } from "../../../utils/enhanced-api-client";
+import { PaidOnly } from "../../../components/SubscriptionGuard";
+import Link from "next/link";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -56,10 +58,6 @@ const Dash = () => {
   const { user, loading: userLoading, error: userError } = useUser();
   const { status, error, loading: statusLoading, refreshStatus, setError } = useRequestStatus(user?.id);
 
-  // Debug logging
-  console.log("Dashboard - User loading:", userLoading);
-  console.log("Dashboard - User:", user);
-  console.log("Dashboard - User error:", userError);
 
   const [cities, setCities] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
@@ -80,7 +78,7 @@ const Dash = () => {
       setLoadingTimeout(false);
     }
   }, [userLoading]);
-  const [zoom, setZoom] = useState<number>(2); 
+  const [zoom, setZoom] = useState<number>(2);
   const [formData, setFormData] = useState<{
     type: string;
     name: string;
@@ -138,7 +136,7 @@ const Dash = () => {
       const cityNames = data.data.map((city: string) => city);
       setCities(cityNames);
     };
-    
+
     // Only fetch if cities array is empty (initial load)
     if (cities.length === 0) {
       fetchUKCities();
@@ -167,7 +165,7 @@ const Dash = () => {
 
   const handleUseLocationClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(async (position) => {
         const { latitude, longitude } = position.coords;
@@ -200,7 +198,7 @@ const Dash = () => {
             places.push(place);
           }
           setPlaces(places);
-          
+
           // Refresh status after successful request
           await refreshStatus();
         } catch (error) {
@@ -215,7 +213,7 @@ const Dash = () => {
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     try {
       const data = await apiClient.getGmapsPlaces({
         type: formData.type.toLowerCase(),
@@ -248,7 +246,7 @@ const Dash = () => {
         setLatLng([places[0].Latitude, places[0].Longitude]);
         setZoom(15); // Set zoom level to 10 for better visibility
       }
-      
+
       // Refresh status after successful request
       await refreshStatus();
     } catch (error) {
@@ -312,8 +310,8 @@ const Dash = () => {
             <div className="text-sm mb-4">
               Authentication is taking longer than expected. Please try refreshing the page.
             </div>
-            <button 
-              onClick={() => window.location.reload()} 
+            <button
+              onClick={() => window.location.reload()}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
               Refresh Page
@@ -328,8 +326,8 @@ const Dash = () => {
     <div className="text-text bg-gradient-to-b from-slate-800 to-violet-800 h-full flex flex-col align-middle items-center text-center">
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
         <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Search</h2>
-        
-        
+
+
         <div className="flex flex-row items-center justify-evenly w-full p-4 relative">
           {/* Limit exceeded overlay */}
           {error?.type === 'limit_exceeded' && (
@@ -345,8 +343,14 @@ const Dash = () => {
               </div>
             </div>
           )}
-          
+
           <form onSubmit={handleFormSubmit} className={error?.type === 'limit_exceeded' ? 'pointer-events-none opacity-50' : ''}>
+
+            <div className="mb-4">
+              <label htmlFor="type" className="block text-lg font-semibold text-text text-left">Business Type:</label>
+              <input placeholder="restaurant, indian restaurant" type="type" id="type" name="type" onChange={handleFormChange} required className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
+            </div>
+
             <div className="mb-4">
               <label htmlFor="country" className="block text-lg font-semibold text-text text-left">Country:</label>
               <ComboboxDropdown
@@ -374,11 +378,6 @@ const Dash = () => {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="type" className="block text-lg font-semibold text-text text-left">Business Type:</label>
-              <input placeholder="restaurant, indian restaurant" type="type" id="type" name="type" onChange={handleFormChange} required className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
-            </div>
-
-            <div className="mb-4">
               <label htmlFor="name" className="block text-lg font-semibold text-text text-left">Business Name <span className="italic text-sm">(Optional)</span></label>
               <input placeholder="Nawaabs" type="name" id="name" name="name" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
             </div>
@@ -402,7 +401,7 @@ const Dash = () => {
                           console.log("Marker clicked", place.PlaceName);
                         }}
                         onMouseOver={() => {
-                          
+
                         }}
                         onMouseOut={() => {
                           console.log("Marker unhovered", place.PlaceName);
@@ -419,42 +418,59 @@ const Dash = () => {
         </div>
       </section>
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
-      <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Results</h2>
-      <span className="text-text text-lg">
-        Data may not persist if you refresh the page, download csv to make sure you keep any results you need.
-      </span>
+       <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Results</h2>
+       <span className="text-text text-lg">
+         Data may not persist if you refresh the page, download csv to make sure you keep any results you need.
+       </span>
         {places.length > 0 ? (
-          <DataTable 
-            columns={columns} 
-            data={places.sort((a, b) => (b.Rating * b.RatingCount) - (a.Rating * a.RatingCount))} 
-          />
+           <DataTable 
+             columns={columns} 
+             data={places.sort((a, b) => (b.Rating * b.RatingCount) - (a.Rating * a.RatingCount))} 
+           />
         ) : <div className="text-text text-2xl font-semibold"></div>}
         {places.length > 0 ? <button className="px-6 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300" onClick={downloadCsv}>Download CSV</button> : <div></div>}
         {places.length > 0 ? (
-          <BusinessViabilitySection
-            averageReviewScore={
-              places.length > 0
-                ? places.reduce((acc, p) => acc + (typeof p.Rating === 'number' ? p.Rating : 0), 0) / places.length
-                : 0
+          <PaidOnly
+            fallback={
+              <div className="w-full max-w-2xl mx-auto mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border">
+                <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Business Viability Rating</h2>
+                <div className="text-center py-8">
+                  <h3 className="text-xl font-semibold text-text mb-4">Upgrade to Access Business Analytics</h3>
+                  <p className="text-text/70 mb-6">
+                    Get detailed business viability insights with a paid plan.
+                  </p>
+                  <Button asChild size="lg" className="bg-violet-600 hover:bg-violet-700">
+                    <Link href="/protected/upgrade">Upgrade Now</Link>
+                  </Button>
+                </div>
+              </div>
             }
-            averageBusinessScore={
-              places.length > 0
-                ? places.reduce((acc, p) => acc + (p.Rating * p.RatingCount), 0) / places.length
-                : 0
-            }
-            maxBusinessScore={
-              places.length > 0
-                ? Math.max(...places.map(p => p.Rating * p.RatingCount))
-                : 0
-            }
-            userBusinessName={formData.name.trim()}
-            places={places}
-            gdp={cityStats.gdp}
-            population={cityStats.population}
-            populationDensity={cityStats.populationDensity}
-            name={formData.city + ", " + formData.country}
+          >
+            <BusinessViabilitySection
+              averageReviewScore={
+                places.length > 0
+                  ? places.reduce((acc, p) => acc + (typeof p.Rating === 'number' ? p.Rating : 0), 0) / places.length
+                  : 0
+              }
+              averageBusinessScore={
+                places.length > 0
+                  ? places.reduce((acc, p) => acc + (p.Rating * p.RatingCount), 0) / places.length
+                  : 0
+              }
+              maxBusinessScore={
+                places.length > 0
+                  ? Math.max(...places.map(p => p.Rating * p.RatingCount))
+                  : 0
+              }
+              userBusinessName={formData.name.trim()}
+              places={places}
+              gdp={cityStats.gdp}
+              population={cityStats.population}
+              populationDensity={cityStats.populationDensity}
+              name={formData.city + ", " + formData.country}
             // TODO: Add ageDemographics and notableFeatures if available
-          />
+            />
+          </PaidOnly>
         ) : null}
         {places.length > 0 && cityData && (
           <div className="mt-4">

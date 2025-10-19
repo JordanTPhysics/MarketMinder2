@@ -32,9 +32,18 @@ export default async function Home() {
           Or are you a sales rep looking for prospects? MarkitMinder has all the tools you need to keep a finger on the pulse in real time.
         </span>
         <ul className="list-disc list-inside lg:text-3xl text-lg text-text">
-          <li className="m-4 flex-row flex"><BsLightningCharge size={35} color='gold' className='mx-2' />Scrape hundreds of businesses, ratings and reviews in minutes</li>
-          <li className="m-4 flex-row flex"><TbMapSearch size={35} color='green' className='mx-2' />Integrate with Google Maps API for competitor overview</li>
-          <li className="m-4 flex-row flex"><GiFluffyWing size={35} color='silver' className='mx-2' />Swiftly view area demographics and analyze markets with our viability checks</li>
+          <li className="m-4 flex-row flex group cursor-pointer hover:bg-foreground transition-all duration-300 rounded-lg p-2">
+            <BsLightningCharge size={35} color='gold' className='mx-2 transition-colors duration-300' />
+            <span >Scrape hundreds of businesses, ratings and reviews in minutes</span>
+          </li>
+          <li className="m-4 flex-row flex group cursor-pointer hover:bg-foreground transition-all duration-300 rounded-lg p-2">
+            <TbMapSearch size={35} color='green' className='mx-2 transition-colors duration-300' />
+            <span >Integrate with Google Maps API for competitor overview</span>
+          </li>
+          <li className="m-4 flex-row flex group cursor-pointer hover:bg-foreground transition-all duration-300 rounded-lg p-2">
+            <GiFluffyWing size={35} color='silver' className='mx-2 transition-colors duration-300' />
+            <span>Swiftly view area demographics and analyze markets with our viability checks</span>
+          </li>
         </ul>
       </section>
       <section className="flex flex-col items-center justify-evenly p-2 w-screen">

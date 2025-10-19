@@ -3,8 +3,11 @@
 import React from 'react';
 import { Check, Star, Zap, Crown } from 'lucide-react';
 import { PiLockKeyFill } from "react-icons/pi";
+import { useSubscription } from "@/utils/use-subscription";
 
 const PricingPage = () => {
+  const { subscription, loading: subscriptionLoading, isFree, isProfessional, isEnterprise, hasPaidPlan } = useSubscription();
+
   const handlePlanClick = async (planName: string, priceId: string) => {
     // Don't allow clicking on Enterprise plan
     if (planName === "Enterprise") {
@@ -85,30 +88,52 @@ const PricingPage = () => {
       ],
       popular: false,
       color: "border-purple-500"
-    },
-    {
-      name: "Test_Product",
-      price: "$0",
-      priceId: "price_1S9oNvLCNjnWAwZSZ9v3ScuO",
-      period: "",
-      description: "For testing purposes",
-      icon: <Star className="w-8 h-8 text-yellow-400" />,
-      features: [
-        "100 requests per day",
-        "2 weeks free trial",
-        "Email support",
-        "Basic analytics",
-        "csv export"
-      ],
-      popular: false,
-      color: "border-slate-600"
     }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-800 to-violet-800 py-12 px-4">
       <div className="w-full">
-        {/* Header Section */}
+      {!subscriptionLoading && (
+          <div className="flex flex-col items-center justify-center mb-12">
+            <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-6 border-2 border-border max-w-md">
+              <h2 className="text-lg font-semibold text-text mb-3">Your Current Plan</h2>
+              <div className="flex items-center justify-center gap-3 mb-3">
+                {isFree && (
+                  <>
+                    <Star className="w-6 h-6 text-yellow-400" />
+                    <span className="px-4 py-2 bg-gray-500 text-white rounded-full text-sm font-medium">
+                      Free Plan
+                    </span>
+                  </>
+                )}
+                {isProfessional && (
+                  <>
+                    <Zap className="w-6 h-6 text-blue-400" />
+                    <span className="px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-medium">
+                      Professional Plan
+                    </span>
+                  </>
+                )}
+                {isEnterprise && (
+                  <>
+                    <Crown className="w-6 h-6 text-purple-400" />
+                    <span className="px-4 py-2 bg-purple-500 text-white rounded-full text-sm font-medium">
+                      Enterprise Plan
+                    </span>
+                  </>
+                )}
+              </div>
+              {hasPaidPlan && (
+                <p className="text-green-500 text-sm font-medium">✓ Active Subscription</p>
+              )}
+              {isFree && (
+                <p className="text-text/70 text-sm">Upgrade to unlock premium features</p>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-bold text-text mb-6 font-serif">
             Choose Your Plan
@@ -120,7 +145,6 @@ const PricingPage = () => {
 
         </div>
 
-        {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
           {plans.map((plan, index) => (
             <button
@@ -150,6 +174,33 @@ const PricingPage = () => {
                     Coming Soon
                   </div>
                 </div>
+              )}
+
+              {/* Current Plan Badge */}
+              {!subscriptionLoading && (
+                <>
+                  {plan.name === "Free" && isFree && (
+                    <div className="absolute -top-4 right-4">
+                      <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                        Current Plan
+                      </div>
+                    </div>
+                  )}
+                  {plan.name === "Professional" && isProfessional && (
+                    <div className="absolute -top-4 right-4">
+                      <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                        Current Plan
+                      </div>
+                    </div>
+                  )}
+                  {plan.name === "Enterprise" && isEnterprise && (
+                    <div className="absolute -top-4 right-4">
+                      <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                        Current Plan
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Plan Header */}
@@ -208,7 +259,7 @@ const PricingPage = () => {
 
         {/* Additional Info Section */}
         <div className="mt-16 text-center">
-          <div className="bg-background/30 backdrop-blur-sm rounded-2xl p-8 w-full border border-border">
+          <div className="bg-background/30 backdrop-blur-sm rounded-2xl p-8 w-full border-2 border-border">
             <h2 className="text-2xl font-bold text-text mb-4 font-serif">
               All Plans Include
             </h2>
@@ -234,7 +285,7 @@ const PricingPage = () => {
             Frequently Asked Questions
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border border-border">
+            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-border">
               <h3 className="text-lg font-semibold text-text mb-3">
                 Can I change plans anytime?
               </h3>
@@ -242,7 +293,7 @@ const PricingPage = () => {
                 Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.
               </p>
             </div>
-            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border border-border">
+            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-border">
               <h3 className="text-lg font-semibold text-text mb-3">
                 Is there a free trial?
               </h3>
@@ -250,7 +301,7 @@ const PricingPage = () => {
                 Our Free plan is available for 2 weeks.
               </p>
             </div>
-            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border border-border">
+            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-border">
               <h3 className="text-lg font-semibold text-text mb-3">
                 What payment methods do you accept?
               </h3>
@@ -258,7 +309,7 @@ const PricingPage = () => {
                 Payments are processed through Stripe.
               </p>
             </div>
-            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border border-border">
+            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-border">
               <h3 className="text-lg font-semibold text-text mb-3">
                 Do you offer refunds?
               </h3>
