@@ -12,7 +12,7 @@ const InteractiveMap = dynamic(() => import('../../components/InteractiveMap'), 
 import { DataTable } from "../../components/ui/data-table";
 import { columns, Place, IsCloseMatch } from "../../lib/places";
 import { ComboboxDropdown } from "../../components/ui/combobox";
-import BusinessViabilitySection from "../../components/BusinessViabilitySection";
+import BusinessRatingSection from "../../components/BusinessIntelligence";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 

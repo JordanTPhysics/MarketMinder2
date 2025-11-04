@@ -17,12 +17,15 @@ export class Place {
   Longitude: number;
   Rating: number;
   RatingCount: number;
+  BusinessScore: number;
   Url: string;
   Types: string;
   Phone: string;
   Selected: boolean = false;
   OpenHours: string = "";
-  
+  MeanDistance: number = 0;
+  DensityScore: number = 0;
+  Uptime: number = 0; // Percentage of week open (0-100)
 
   constructor(
     PlaceID: string,
@@ -35,7 +38,10 @@ export class Place {
     Url: string,
     Types: string,
     Phone: string,
-    Selected: boolean = false
+    Selected: boolean = false,
+    OpenHours: string = "",
+    MeanDistance: number = 0,
+    DensityScore: number = 0,
   ) {
     this.PlaceID = PlaceID;
     this.Address = Address;
@@ -44,18 +50,124 @@ export class Place {
     this.Longitude = Longitude;
     this.Rating = Rating;
     this.RatingCount = RatingCount;
+    this.BusinessScore = (Rating ?? 0) * (RatingCount ?? 0);
     this.Url = Url;
     this.Types = Types;
     this.Phone = Phone;
     this.Selected = Selected;
+    this.OpenHours = OpenHours;
+    this.MeanDistance = MeanDistance;
+    this.DensityScore = DensityScore;
+    this.Uptime = 0; // Will be calculated separately
   }
 }
+
+// Calculate uptime percentage from OpenHours string
+export const calculateUptime = (openHours: string): number => {
+  if (!openHours || openHours.trim() === "") {
+    return 0;
+  }
+
+  // Parse the openHours string which is in format: "Monday: 7:00 - 7:30 am, 9:30 am - 9:30 pm | Tuesday: ..."
+  const days = openHours.split('|').map(day => day.trim()).filter(day => day.length > 0);
+  let totalHours = 0;
+
+  days.forEach(dayStr => {
+    // Match pattern like "Monday: 7:00 - 7:30 am, 9:30 am - 9:30 pm"
+    // Extract day name and time ranges
+    const colonIndex = dayStr.indexOf(':');
+    if (colonIndex === -1) return;
+    
+    const timeRanges = dayStr.substring(colonIndex + 1).trim();
+    if (!timeRanges) return;
+    
+    // Check for special cases
+    const timeRangesLower = timeRanges.toLowerCase();
+    if (timeRangesLower.includes("closed")) {
+      // Closed for the day - add 0 hours
+      return;
+    }
+    if (timeRangesLower.includes("open 24 hours") || timeRangesLower.includes("24 hours")) {
+      // Open 24 hours - add 24 hours
+      totalHours += 24;
+      return;
+    }
+    
+    // Split by comma to get multiple time ranges per day
+    const ranges = timeRanges.split(',').map(r => r.trim()).filter(r => r.length > 0);
+    
+    ranges.forEach(range => {
+      const rangeLower = range.toLowerCase();
+      // Skip if range itself is closed
+      if (rangeLower.includes("closed")) return;
+      // If range is 24 hours, add 24 hours and continue
+      if (rangeLower.includes("open 24 hours") || rangeLower.includes("24 hours")) {
+        totalHours += 24;
+        return;
+      }
+      
+      const timeMatch = range.match(/(\d{1,2}):(\d{2})\s*(am|pm)?\s*[-–—]\s*(\d{1,2}):(\d{2})\s*(am|pm)?/i);
+      if (!timeMatch) return;
+      
+      let startHour = parseInt(timeMatch[1]);
+      const startMinute = parseInt(timeMatch[2]);
+      const startPeriod = timeMatch[3]?.toLowerCase();
+      let endHour = parseInt(timeMatch[4]);
+      const endMinute = parseInt(timeMatch[5]);
+      const endPeriod = timeMatch[6]?.toLowerCase();
+      
+      // Convert to 24-hour format for start time
+      if (startPeriod === 'pm' && startHour !== 12) {
+        startHour += 12;
+      } else if (startPeriod === 'am' && startHour === 12) {
+        startHour = 0;
+      } else if (!startPeriod) {
+        // No AM/PM specified - assume AM unless it's 12
+        // If 12, assume noon (12:00)
+      }
+      
+      // Convert to 24-hour format for end time
+      if (endPeriod === 'pm' && endHour !== 12) {
+        endHour += 12;
+      } else if (endPeriod === 'am' && endHour === 12) {
+        endHour = 0;
+      } else if (!endPeriod) {
+        // No AM/PM specified - assume AM unless it's 12
+        // If endHour < startHour and no periods specified, assume end is PM
+        if (endHour < startHour && !startPeriod) {
+          endHour += 12;
+        }
+      }
+      
+      // Calculate hours
+      const startTotalMinutes = startHour * 60 + startMinute;
+      let endTotalMinutes = endHour * 60 + endMinute;
+      
+      // If end time appears to be before start time, assume it's the next day
+      if (endTotalMinutes < startTotalMinutes) {
+        // Check if it's likely a same-day range (e.g., 9am - 5pm)
+        // If both have periods or both lack periods and end < start, assume next day
+        if ((startPeriod || endPeriod) || (endHour < startHour && !startPeriod && !endPeriod)) {
+          endTotalMinutes += 24 * 60; // Add 24 hours
+        }
+      }
+      
+      const hours = (endTotalMinutes - startTotalMinutes) / 60;
+      if (hours > 0 && hours <= 24) {
+        totalHours += hours;
+      }
+    });
+  });
+
+  // Calculate percentage: total hours / 168 hours per week
+  // Cap at 100% in case calculation exceeds 168 hours
+  const percentage = Math.min((totalHours / 168) * 100, 100);
+  return Math.round(percentage * 10) / 10; // Round to 1 decimal place
+};
 
 export const IsCloseMatch = (input: string, check: string): boolean => {
   const normalizedInput = input.toLowerCase();
   const normalizedCheck = check.toLowerCase();
-  console.log("Normalized Input: ", normalizedInput);
-  console.log("Normalized Check: ", normalizedCheck);
 
   let matching: number = 0;
   let length = Math.min(normalizedInput.length, normalizedCheck.length);
@@ -201,7 +313,7 @@ export const columns: ColumnDef<Place>[] = [
       )
 
     }, 
-    accessorFn: (row) => row.Rating * row.RatingCount,
+    accessorFn: (row) => row.BusinessScore,
     id: "businessScore",
     cell: ({ cell }) => {
       const score = cell.getValue<number>();
@@ -274,6 +386,87 @@ export const columns: ColumnDef<Place>[] = [
     }, accessorKey: "Phone"
 
   },
+  {
+    header: ({ column }) => {
+      return (
+        <button
+          className="text-white"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Opening Hours
+          <ArrowUpDown className="ml-2 h-4 w-4 text-white" />
+        </button>
+      )
+
+    }, 
+    accessorKey: "OpenHours",
+    id: "openHours",
+    cell: ({ cell }) => <span className="overflow-x-auto">{cell.getValue<string>()}</span>
+  },
+  {
+    header: ({ column }) => {
+      return (
+        <button
+          className="text-white"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Uptime
+          <ArrowUpDown className="ml-2 h-4 w-4 text-white" />
+        </button>
+      )
+
+    }, 
+    accessorFn: (row) => row.Uptime,
+    id: "uptime",
+    cell: ({ cell }) => {
+      const value = cell.getValue<number>();
+      return (
+        <span className="font-semibold">
+          {value.toFixed(1)}%
+        </span>
+      );
+    }
+  },
+  {
+    header: ({ column }) => {
+      return (
+        <button
+          className="text-white"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Proximity
+          <ArrowUpDown className="ml-2 h-4 w-4 text-white" />
+        </button>
+      )
+
+    }, 
+    accessorKey: "MeanDistance",
+    id: "meanDistance",
+    cell: ({ cell }) => {
+      const value = cell.getValue<number>();
+      return value ? `${(value / 1000).toFixed(2)} km` : "-";
+    }
+  },
+  {
+    header: ({ column }) => {
+      return (
+        <button
+          className="text-white"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Density Score
+          <ArrowUpDown className="ml-2 h-4 w-4 text-white" />
+        </button>
+      )
+
+    }, 
+    accessorKey: "DensityScore",
+    id: "densityScore",
+    cell: ({ cell }) => {
+      const value = cell.getValue<number>();
+      return value ? `${(value * 100).toFixed(2)}%` : "-";
+    }
+  }
 
 ]
 

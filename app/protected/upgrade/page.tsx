@@ -56,7 +56,7 @@ const PricingPage = () => {
     {
       name: "Professional",
       price: "$99",
-      priceId: "price_1S0rriLCNjnWAwZSXmiJdjvs", // "price_1S73djLCNjnWAwZSVFfs1Yhk",
+      priceId: "price_1S73djLCNjnWAwZSVFfs1Yhk", // "price_1S73djLCNjnWAwZSVFfs1Yhk",
       period: "per month",
       description: "For serious traders and investors",
       icon: <Zap className="w-8 h-8 text-blue-400" />,

@@ -9,9 +9,10 @@ const InteractiveMap = dynamic(() => import('../../../components/InteractiveMap'
 });
 
 import { DataTable } from "../../../components/ui/data-table";
-import { columns, Place, IsCloseMatch } from "../../../lib/places";
+import { columns, Place, IsCloseMatch, calculateUptime } from "../../../lib/places";
 import { ComboboxDropdown } from "../../../components/ui/combobox";
-import BusinessViabilitySection from "../../../components/BusinessViabilitySection";
+import BusinessIntelligence from "../../../components/BusinessIntelligence";
+import AreaDemographics from "../../../components/AreaDemographics";
 import { Button } from "@/components/ui/button";
 import { useUser } from "../../../utils/use-user";
 import { useRequestStatus } from "../../../utils/request-status";
@@ -19,6 +20,9 @@ import { RequestStatusDisplay } from "../../../components/RequestStatusDisplay";
 import { apiClient } from "../../../utils/enhanced-api-client";
 import { PaidOnly } from "../../../components/SubscriptionGuard";
 import Link from "next/link";
+import { computeLocalDensityScores, LatLng } from "@/lib/spatialDensity";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ColumnDef } from "@tanstack/react-table";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -27,6 +31,44 @@ interface CityData {
   ageDemographics: string | null;
   employmentStats: string | null;
   gdp: string | null;
+}
+
+const getPlacesFromData = (data: any, name: string) => {
+  const places = [];
+
+  for (let i = 0; i < data.places.length; i++) {
+    let placeName = data.places[i].displayName.text;
+    const weekdayDescriptions = data.places[i].regularOpeningHours?.weekdayDescriptions || [];
+    const openHours = weekdayDescriptions.join(' | ');
+    let place = new Place(
+      data.places[i].name.split("/")[1],
+      data.places[i].formattedAddress,
+      placeName,
+      data.places[i].location.latitude,
+      data.places[i].location.longitude,
+      data.places[i].rating,
+      data.places[i].userRatingCount,
+      data.places[i].websiteUri,
+      data.places[i].types.join(", "),
+      data.places[i].nationalPhoneNumber,
+      IsCloseMatch(name, placeName),
+      openHours,
+    );
+
+    // Calculate uptime percentage
+    place.Uptime = calculateUptime(openHours);
+
+    places.push(place);
+  }
+
+  const spatialDensity = computeLocalDensityScores(places.map(p => ({ lat: p.Latitude, lng: p.Longitude })));
+
+  for (let i = 0; i < data.places.length; i++) {
+    places[i].DensityScore = spatialDensity[i].densityScore;
+    places[i].MeanDistance = spatialDensity[i].meanDist;
+  };
+
+  return places;
 }
 
 const fetchWikidataCityStats = async (city: string, country: string) => {
@@ -63,7 +105,20 @@ const Dash = () => {
   const [countries, setCountries] = useState<string[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [latLng, setLatLng] = useState<[number, number]>([20, 0]);
+  const [averageDensityScore, setAverageDensityScore] = useState<number>(0);
+  const [averageMeanDistance, setAverageMeanDistance] = useState<number>(0);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  // Column visibility state for paid-only optional columns
+  const [columnVisibility, setColumnVisibility] = useState<{
+    openHours: boolean;
+    meanDistance: boolean;
+    densityScore: boolean;
+  }>({
+    openHours: false,
+    meanDistance: false,
+    densityScore: false,
+  });
 
   // Add timeout to prevent infinite loading
   useEffect(() => {
@@ -150,10 +205,13 @@ const Dash = () => {
     }
   }, [places, formData.city, formData.country]);
 
-  const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-  }
+  useEffect(() => {
+    if (places.length > 0) {
+      setAverageDensityScore(places.reduce((acc, p) => acc + p.DensityScore, 0) / places.length);
+      setAverageMeanDistance(1 / (places.reduce((acc, p) => acc + p.MeanDistance, 0) / places.length));
+    }
+  }, [places]);
+
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target as HTMLInputElement;
@@ -179,25 +237,7 @@ const Dash = () => {
             lng: longitude
           }, setError);
 
-          const places = [];
-          for (let i = 0; i < data.places.length; i++) {
-            let placeName = data.places[i].displayName.text;
-            let place = new Place(
-              data.places[i].name.split("/")[1],
-              data.places[i].formattedAddress,
-              placeName,
-              data.places[i].location.latitude,
-              data.places[i].location.longitude,
-              data.places[i].rating,
-              data.places[i].userRatingCount,
-              data.places[i].websiteUri,
-              data.places[i].types.join(", "),
-              data.places[i].nationalPhoneNumber,
-              IsCloseMatch(formData.name, placeName)
-            );
-            places.push(place);
-          }
-          setPlaces(places);
+          setPlaces(getPlacesFromData(data, formData.name));
 
           // Refresh status after successful request
           await refreshStatus();
@@ -222,26 +262,7 @@ const Dash = () => {
         postCode: formData.postcode,
       }, setError);
 
-      const places = [];
-      for (let i = 0; i < data.places.length; i++) {
-        console.log("Place: ", data.places[i]);
-        let placeName = data.places[i].displayName.text;
-        let place = new Place(
-          data.places[i].name.split("/")[1],
-          data.places[i].formattedAddress,
-          placeName,
-          data.places[i].location.latitude,
-          data.places[i].location.longitude,
-          data.places[i].rating,
-          data.places[i].userRatingCount,
-          data.places[i].websiteUri,
-          data.places[i].types.join(", "),
-          data.places[i].nationalPhoneNumber,
-          IsCloseMatch(formData.name, placeName)
-        );
-        places.push(place);
-      }
-      setPlaces(places);
+      setPlaces(getPlacesFromData(data, formData.name));
       if (places.length > 0) {
         setLatLng([places[0].Latitude, places[0].Longitude]);
         setZoom(15); // Set zoom level to 10 for better visibility
@@ -255,30 +276,86 @@ const Dash = () => {
     }
   };
 
-  const downloadCsv = () => {
-    const csvHeaders = "Place Name,Address,Rating,Review Count,Business Score,Phone,Url";
+  // Filter columns based on visibility state
+  const visibleColumns = React.useMemo(() => {
+    return columns.filter(col => {
+      const colId = (col as any).id || (col as any).accessorKey;
+      if (colId === 'openHours') return columnVisibility.openHours;
+      if (colId === 'uptime') return columnVisibility.openHours; // Uptime shown when openHours is visible
+      if (colId === 'meanDistance') return columnVisibility.meanDistance;
+      if (colId === 'densityScore') return columnVisibility.densityScore;
+      // Always show non-optional columns
+      return true;
+    }) as ColumnDef<Place>[];
+  }, [columnVisibility]);
+
+  const sanitizeForCsv = (text: string): string => {
+    if (!text) return "";
+    // Replace em dashes (U+2013) and en dashes (U+2014) with regular hyphens
+    // Replace various Unicode spaces with regular spaces
+    // Replace other problematic Unicode characters while preserving times
+    return text
+      .replace(/[\u2013\u2014\u2015]/g, "-") // Replace em/en dashes with hyphen
+      .replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000]/g, " ") // Replace non-breaking and special spaces with regular space
+      .replace(/[\u2026]/g, "...") // Replace ellipsis with three dots
+      .replace(/[\u00AD]/g, "") // Remove soft hyphens
+      .replace(/[^\x20-\x7E\n\r|:]/g, "") // Keep ASCII printable chars, newlines, pipe (|), and colons
+      .replace(/\s+/g, " ") // Normalize multiple spaces to single space
+      .trim();
+  };
+
+  const escapeCsvValue = (value: string | number): string => {
+    const str = String(value);
+    // If value contains comma, quote, or newline, wrap in quotes and escape quotes
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const downloadCsv = (filename: string) => {
+    // Build headers based on visible columns
+    const headers = ["Place Name", "Address", "Rating", "Review Count", "Business Score", "Phone", "Url"];
+    if (columnVisibility.openHours) {
+      headers.push("Open Hours");
+      headers.push("Uptime");
+    }
+    if (columnVisibility.meanDistance) headers.push("Proximity");
+    if (columnVisibility.densityScore) headers.push("Density Score");
+
+    const csvHeaders = headers.join(",");
     const csvContent = places.map(place => {
-      const businessScore = (place.Rating * place.RatingCount).toFixed(1);
-      return `${place.PlaceName},${place.Address.replace(/,/g, " ")},${place.Rating},${place.RatingCount},${businessScore},${place.Phone},${place.Url}`;
+      const baseRow = [
+        escapeCsvValue(place.PlaceName),
+        escapeCsvValue(place.Address.replace(/,/g, " ").replace(/\n/g, " ")),
+        escapeCsvValue(place.Rating),
+        escapeCsvValue(place.RatingCount),
+        escapeCsvValue(place.BusinessScore.toFixed(1)),
+        escapeCsvValue(place.Phone),
+        escapeCsvValue(place.Url)
+      ];
+
+      if (columnVisibility.openHours) {
+        const sanitizedOpenHours = sanitizeForCsv(place.OpenHours || "");
+        baseRow.push(escapeCsvValue(sanitizedOpenHours));
+        baseRow.push(escapeCsvValue(place.Uptime ? `${place.Uptime.toFixed(1)}%` : "0%"));
+      }
+      if (columnVisibility.meanDistance) {
+        baseRow.push(escapeCsvValue(place.MeanDistance ? `${(place.MeanDistance / 1000).toFixed(2)} km` : ""));
+      }
+      if (columnVisibility.densityScore) {
+        baseRow.push(escapeCsvValue(place.DensityScore ? `${(place.DensityScore * 100).toFixed(2)}%` : ""));
+      }
+
+      return baseRow.join(",");
     }).join('\n');
+
     const blob = new Blob([csvHeaders + '\n' + csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'places.csv';
+    a.download = filename;
     a.click();
-  }
-
-  const infoWindowContent = (place: Place) => {
-    return (
-      <div className="p-4">
-        <h2 className="text-lg font-semibold">{place.PlaceName}</h2>
-        <p>{place.Address}</p>
-        <p>Rating: {place.Rating}</p>
-        <p>Phone: {place.Phone}</p>
-        <a href={place.Url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Website</a>
-      </div>
-    );
   }
 
   // Show loading state while user is being fetched
@@ -382,6 +459,46 @@ const Dash = () => {
               <input placeholder="Nawaabs" type="name" id="name" name="name" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
             </div>
 
+            <PaidOnly
+              fallback={null}
+            >
+              <div className="mb-4 p-3 bg-foreground/50 rounded-md border border-border">
+                <label className="block text-sm font-semibold text-text text-left mb-2">Premium Data Fields:</label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="openHours"
+                      checked={columnVisibility.openHours}
+                      onCheckedChange={(checked) =>
+                        setColumnVisibility(prev => ({ ...prev, openHours: checked === true }))
+                      }
+                    />
+                    <label htmlFor="openHours" className="text-sm text-text cursor-pointer">Open Hours</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="meanDistance"
+                      checked={columnVisibility.meanDistance}
+                      onCheckedChange={(checked) =>
+                        setColumnVisibility(prev => ({ ...prev, meanDistance: checked === true }))
+                      }
+                    />
+                    <label htmlFor="meanDistance" className="text-sm text-text cursor-pointer">Mean Distance</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="densityScore"
+                      checked={columnVisibility.densityScore}
+                      onCheckedChange={(checked) =>
+                        setColumnVisibility(prev => ({ ...prev, densityScore: checked === true }))
+                      }
+                    />
+                    <label htmlFor="densityScore" className="text-sm text-text cursor-pointer">Density Score</label>
+                  </div>
+                </div>
+              </div>
+            </PaidOnly>
+
             <Button variant="outline" disabled={!formData.type} onClick={handleUseLocationClick} className="px-6 py-3 mx-2 bg-foreground rounded-md border-2 border-border text-lg font-semibold  hover:bg-slate-700 hover:scale-95 transition duration-300">Use Location</Button>
             <Button variant="outline" type="submit" disabled={!formData.type || !formData.city || !formData.country} className="px-6 py-3 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300">Search</Button>
           </form>
@@ -418,17 +535,26 @@ const Dash = () => {
         </div>
       </section>
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
-       <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Results</h2>
-       <span className="text-text text-lg">
-         Data may not persist if you refresh the page, download csv to make sure you keep any results you need.
-       </span>
+        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Results</h2>
+        <span className="text-text text-lg">
+          Data may not persist if you refresh the page, download csv to make sure you keep any results you need.
+        </span>
         {places.length > 0 ? (
-           <DataTable 
-             columns={columns} 
-             data={places.sort((a, b) => (b.Rating * b.RatingCount) - (a.Rating * a.RatingCount))} 
-           />
+          <DataTable
+            columns={visibleColumns}
+            data={places.sort((a, b) => (b.Rating * b.RatingCount) - (a.Rating * a.RatingCount))}
+          />
         ) : <div className="text-text text-2xl font-semibold"></div>}
-        {places.length > 0 ? <button className="px-6 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300" onClick={downloadCsv}>Download CSV</button> : <div></div>}
+        {places.length > 0 ?
+          <button
+            className="px-6 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300"
+            onClick={() => downloadCsv(formData.type.trim() + formData.city.trim() + '.csv')}
+            disabled={places.length === 0}
+          >
+            Download CSV
+          </button> : <div></div>}
+        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Analytics</h2>
+
         {places.length > 0 ? (
           <PaidOnly
             fallback={
@@ -446,30 +572,39 @@ const Dash = () => {
               </div>
             }
           >
-            <BusinessViabilitySection
-              averageReviewScore={
-                places.length > 0
-                  ? places.reduce((acc, p) => acc + (typeof p.Rating === 'number' ? p.Rating : 0), 0) / places.length
-                  : 0
-              }
-              averageBusinessScore={
-                places.length > 0
-                  ? places.reduce((acc, p) => acc + (p.Rating * p.RatingCount), 0) / places.length
-                  : 0
-              }
-              maxBusinessScore={
-                places.length > 0
-                  ? Math.max(...places.map(p => p.Rating * p.RatingCount))
-                  : 0
-              }
-              userBusinessName={formData.name.trim()}
-              places={places}
-              gdp={cityStats.gdp}
-              population={cityStats.population}
-              populationDensity={cityStats.populationDensity}
-              name={formData.city + ", " + formData.country}
-            // TODO: Add ageDemographics and notableFeatures if available
-            />
+            <div className="flex flex-col md:flex-row gap-4 w-full max-w-5xl mx-auto items-stretch">
+              <BusinessIntelligence
+                averageReviewScore={
+                  places.length > 0
+                    ? places.reduce((acc, p) => acc + (typeof p.Rating === 'number' ? p.Rating : 0), 0) / places.length
+                    : 0
+                }
+                averageBusinessScore={
+                  places.length > 0
+                    ? places.reduce((acc, p) => acc + (p.BusinessScore || 0), 0) / places.length
+                    : 0
+                }
+                maxBusinessScore={
+                  places.length > 0
+                    ? Math.max(...places.map(p => p.BusinessScore || 0))
+                    : 0
+                }
+                userBusinessName={formData.name.trim()}
+                places={places}
+                gdp={cityStats.gdp}
+                population={cityStats.population}
+                populationDensity={cityStats.populationDensity}
+
+              />
+              <AreaDemographics
+                name={formData.city + ", " + formData.country}
+                userBusinessName={formData.name.trim()}
+                places={places}
+                population={cityStats.population}
+                populationDensity={cityStats.populationDensity}
+              />
+            </div>
+
           </PaidOnly>
         ) : null}
         {places.length > 0 && cityData && (

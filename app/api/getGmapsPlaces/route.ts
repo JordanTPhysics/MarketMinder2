@@ -70,7 +70,8 @@ export async function POST(req: NextRequest) {
         'places.websiteUri',
         'places.name',
         'places.nationalPhoneNumber',
-        'places.userRatingCount'
+        'places.userRatingCount',
+        'places.regularOpeningHours.weekdayDescriptions'
       ].join(','),
     }
 
