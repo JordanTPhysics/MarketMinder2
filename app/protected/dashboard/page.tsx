@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from 'next/dynamic';
-import { Marker, APIProvider } from "@vis.gl/react-google-maps";
+import { Marker, APIProvider, InfoWindow } from "@vis.gl/react-google-maps";
 
 const InteractiveMap = dynamic(() => import('../../../components/InteractiveMap'), {
   ssr: false,
@@ -14,6 +14,13 @@ import { ComboboxDropdown } from "../../../components/ui/combobox";
 import BusinessIntelligence from "../../../components/BusinessIntelligence";
 import AreaDemographics from "../../../components/AreaDemographics";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useUser } from "../../../utils/use-user";
 import { useRequestStatus } from "../../../utils/request-status";
 import { RequestStatusDisplay } from "../../../components/RequestStatusDisplay";
@@ -23,6 +30,7 @@ import Link from "next/link";
 import { computeLocalDensityScores, LatLng } from "@/lib/spatialDensity";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
+import { FaExternalLinkAlt } from "react-icons/fa";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -105,9 +113,14 @@ const Dash = () => {
   const [countries, setCountries] = useState<string[]>([]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [latLng, setLatLng] = useState<[number, number]>([20, 0]);
+  const [cityStats, setCityStats] = useState<{ population?: number; gdp?: number; populationDensity?: number }>({});
+  const [cityData, setCityData] = useState<CityData | null>(null);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [zoom, setZoom] = useState<number>(10);
   const [averageDensityScore, setAverageDensityScore] = useState<number>(0);
   const [averageMeanDistance, setAverageMeanDistance] = useState<number>(0);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   // Column visibility state for paid-only optional columns
   const [columnVisibility, setColumnVisibility] = useState<{
@@ -119,6 +132,20 @@ const Dash = () => {
     meanDistance: false,
     densityScore: false,
   });
+  const [formData, setFormData] = useState<{
+    type: string;
+    name: string;
+    country: string;
+    city: string;
+    postcode: string;
+  }>({
+    type: "",
+    name: "", // Default to an empty string
+    country: "United Kingdom",
+    city: "",
+    postcode: "",
+  });
+
 
   // Add timeout to prevent infinite loading
   useEffect(() => {
@@ -133,70 +160,82 @@ const Dash = () => {
       setLoadingTimeout(false);
     }
   }, [userLoading]);
-  const [zoom, setZoom] = useState<number>(2);
-  const [formData, setFormData] = useState<{
-    type: string;
-    name: string;
-    country: string;
-    city: string;
-    postcode: string;
-  }>({
-    type: "",
-    name: "", // Default to an empty string
-    country: "United Kingdom",
-    city: "",
-    postcode: "",
-  });
-  const [cityStats, setCityStats] = useState<{ population?: number; gdp?: number; populationDensity?: number }>({});
-  const [cityData, setCityData] = useState<CityData | null>(null);
+
 
   useEffect(() => {
     const fetchCountries = async () => {
-      const response = await fetch('https://countriesnow.space/api/v0.1/countries/iso', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await response.json();
-      const countryNames = data.data.map((country: { name: string }) => country.name);
-      setCountries(countryNames);
+      try {
+        const response = await fetch('https://countriesnow.space/api/v0.1/countries/iso', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to fetch countries:', response.status, response.statusText);
+          return;
+        }
+        
+        const data = await response.json();
+        
+        // Check if API returned an error
+        if (data.error) {
+          console.error('API error fetching countries:', data.error);
+          return;
+        }
+        
+        if (data.data && Array.isArray(data.data)) {
+          const countryNames = data.data.map((country: { name: string }) => country.name);
+          setCountries(countryNames);
+        } else {
+          console.error('Invalid countries data structure:', data);
+        }
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+      }
     };
     fetchCountries();
-  }, []); // Fetch places when formData.type changes
+  }, []);
 
   useEffect(() => {
     const fetchCities = async () => {
-      const response = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ country: formData.country }), // Use the selected country from formData
-      });
-      const data = await response.json();
-      const cityNames = data.data.map((city: string) => city);
-      setCities(cityNames);
+      if (!formData.country || countries.length === 0 || !countries.includes(formData.country)) {
+        return;
+      }
+      
+      try {
+        const response = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ country: formData.country }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to fetch cities:', response.status, response.statusText);
+          return;
+        }
+        
+        const data = await response.json();
+        
+        // Check if API returned an error
+        if (data.error) {
+          console.error('API error fetching cities:', data.error);
+          return;
+        }
+        
+        if (data.data && Array.isArray(data.data)) {
+          const cityNames = data.data.map((city: string) => city);
+          setCities(cityNames);
+        } else {
+          console.error('Invalid cities data structure:', data);
+        }
+      } catch (error) {
+        console.error('Error fetching cities:', error);
+      }
     };
-    if (countries.includes(formData.country)) {
-      fetchCities();
-    }
+    
+    fetchCities();
   }, [formData.country, countries]);
 
-  // Fetch UK cities on initial load since UK is the default
-  useEffect(() => {
-    const fetchUKCities = async () => {
-      const response = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ country: "United Kingdom" }),
-      });
-      const data = await response.json();
-      const cityNames = data.data.map((city: string) => city);
-      setCities(cityNames);
-    };
-
-    // Only fetch if cities array is empty (initial load)
-    if (cities.length === 0) {
-      fetchUKCities();
-    }
-  }, []);
 
   useEffect(() => {
     // Fetch city stats from Wikidata when places are set and city/country are selected
@@ -460,8 +499,9 @@ const Dash = () => {
             </div>
 
             <PaidOnly
-              fallback={null}
-            >
+              fallback={<div>Paid users can select additional data fields.</div>}
+              >
+            
               <div className="mb-4 p-3 bg-foreground/50 rounded-md border border-border">
                 <label className="block text-sm font-semibold text-text text-left mb-2">Premium Data Fields:</label>
                 <div className="flex flex-col gap-2">
@@ -510,21 +550,59 @@ const Dash = () => {
                   zoom={zoom}
                   markers={places.map((place) => {
                     return (
-                      <Marker
-                        key={place.PlaceID}
-                        position={{ lat: place.Latitude, lng: place.Longitude }}
-                        title={place.PlaceName}
-                        onClick={() => {
-                          console.log("Marker clicked", place.PlaceName);
-                        }}
-                        onMouseOver={() => {
-
-                        }}
-                        onMouseOut={() => {
-                          console.log("Marker unhovered", place.PlaceName);
-                        }
-                        }
-                      />
+                      <React.Fragment key={place.PlaceID}>
+                        <Marker
+                          position={{ lat: place.Latitude, lng: place.Longitude }}
+                          title={place.PlaceName}
+                          onClick={() => {
+                            setSelectedPlace(place);
+                          }}
+                        />
+                        {selectedPlace?.PlaceID === place.PlaceID && (
+                          <InfoWindow
+                            position={{ lat: place.Latitude, lng: place.Longitude }}
+                            onCloseClick={() => setSelectedPlace(null)}
+                          >
+                            <div className="p-2 min-w-[250px] max-w-[300px]">
+                              <h3 className="font-bold text-lg text-gray-900 mb-2">{place.PlaceName}</h3>
+                              <div className="space-y-2 text-sm">
+                                <div>
+                                  <span className="font-semibold text-gray-700">Address:</span>
+                                  <p className="text-gray-600">{place.Address}</p>
+                                </div>
+                                {place.Phone && (
+                                  <div>
+                                    <span className="font-semibold text-gray-700">Phone:</span>
+                                    <p className="text-gray-600">{place.Phone}</p>
+                                  </div>
+                                )}
+                                <div className="flex gap-4 pt-2 border-t border-gray-200">
+                                  <div>
+                                    <span className="font-semibold text-gray-700">Business Score:</span>
+                                    <p className="text-gray-600 font-bold">{place.BusinessScore.toFixed(1)}</p>
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-gray-700">Review Score:</span>
+                                    <p className="text-gray-600 font-bold">{place.Rating} / 5</p>
+                                  </div>
+                                </div>
+                                {place.Url && (
+                                  <div className="pt-2">
+                                    <a 
+                                      href={place.Url} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:text-blue-800 underline text-xs"
+                                    >
+                                      Visit Website
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </InfoWindow>
+                        )}
+                      </React.Fragment>
                     );
                   }
                   )}
@@ -540,19 +618,38 @@ const Dash = () => {
           Data may not persist if you refresh the page, download csv to make sure you keep any results you need.
         </span>
         {places.length > 0 ? (
-          <DataTable
-            columns={visibleColumns}
-            data={places.sort((a, b) => (b.Rating * b.RatingCount) - (a.Rating * a.RatingCount))}
-          />
+          <div className="flex gap-4 mt-4">
+            <Dialog open={isTableModalOpen} onOpenChange={setIsTableModalOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="px-6 bg-foreground border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300"
+                >
+                  View Table
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-screen max-h-[90vh] flex flex-col p-0">
+                <DialogHeader className="sticky top-0 z-10 bg-background border-b border-border px-6 py-4">
+                  <DialogTitle className="text-2xl font-bold text-text">Search Results</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto px-6 pb-6">
+                  <DataTable
+                    columns={visibleColumns}
+                    data={places.sort((a, b) => (b.Rating * b.RatingCount) - (a.Rating * a.RatingCount))}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button
+              variant="outline"
+              className="px-6 bg-foreground border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300"
+              onClick={() => downloadCsv(formData.type.trim() + formData.city.trim() + '.csv')}
+              disabled={places.length === 0}
+            >
+              Download CSV
+            </Button>
+          </div>
         ) : <div className="text-text text-2xl font-semibold"></div>}
-        {places.length > 0 ?
-          <button
-            className="px-6 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300"
-            onClick={() => downloadCsv(formData.type.trim() + formData.city.trim() + '.csv')}
-            disabled={places.length === 0}
-          >
-            Download CSV
-          </button> : <div></div>}
         <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Analytics</h2>
 
         {places.length > 0 ? (
@@ -572,7 +669,7 @@ const Dash = () => {
               </div>
             }
           >
-            <div className="flex flex-col md:flex-row gap-4 w-full max-w-5xl mx-auto items-stretch">
+            <div className="flex flex-col md:flex-row gap-4 w-full max-w-[75vw] mx-auto items-stretch">
               <BusinessIntelligence
                 averageReviewScore={
                   places.length > 0

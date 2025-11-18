@@ -4,10 +4,11 @@ import React from "react"
 
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown } from "lucide-react"
+import { FaExternalLinkAlt } from "react-icons/fa";
+
 import Link from "next/link"
 
 import { MdOutlineCheckBoxOutlineBlank, MdOutlineCheckBox } from "react-icons/md";
-import StarRating from "../components/ui/star-rating"
 
 export class Place {
   PlaceID: string;
@@ -267,7 +268,7 @@ export const columns: ColumnDef<Place>[] = [
       if (cell.row.original.Url === "" || cell.row.original.Url == null || cell.row.original == undefined) return cell.row.original.PlaceName;
       return <Link href={cell.row.original.Url} target="_blank" rel="noreferrer">
         <span className="text-slate-400 hover:text-slate-600 underline highlight">
-          {cell.row.original.PlaceName}
+          {cell.row.original.PlaceName} <FaExternalLinkAlt/>
         </span>
       </Link>;
     }

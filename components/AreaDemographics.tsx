@@ -138,7 +138,7 @@ const AreaDemographics: React.FC<AreaDemographicsProps> = ({
   // Simple overall score calculation (mock, can be improved)
 
   return (
-    <section className="w-full md:flex-1 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border flex flex-col">
+    <section className="w-full md:w-1/3 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border flex flex-col">
       <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Area Demographics</h2>
       <h3 className="text-xl font-bold text-text mb-6 text-left pb-2">{name}</h3>
       <div className="flex flex-col gap-2">

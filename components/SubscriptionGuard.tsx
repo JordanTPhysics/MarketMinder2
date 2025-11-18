@@ -16,7 +16,7 @@ export function SubscriptionGuard({
   fallback = null,
   loading = <div className="text-text">Loading...</div>
 }: SubscriptionGuardProps) {
-  const { subscription, loading: subscriptionLoading, isFree, isProfessional, isEnterprise, hasPaidPlan } = useSubscription();
+  const { subscription, loading: subscriptionLoading, isProfessional, isEnterprise, hasPaidPlan } = useSubscription();
 
   if (subscriptionLoading) {
     return <>{loading}</>;
