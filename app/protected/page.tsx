@@ -2,7 +2,8 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import Image from "next/image";
+import MainBanner from "@/components/MainBanner";
+
 
 import { BsLightningCharge } from "react-icons/bs";
 import { TbMapSearch } from "react-icons/tb";
@@ -21,24 +22,7 @@ export default async function ProtectedPage() {
 
   return (
     <div className="w-screen min-h-screen flex flex-col items-center justify-evenly p-2">
-      <section className="flex flex-row items-center justify-evenly p-2 w-screen bg-background-secondary">
-        <Image src="/images/mmlogo.png" alt="MarkitMinder Logo" width={100} height={100} />
-        <div className="flex flex-col items-center justify-evenly">
-          <h1 className="lg:text-6xl text-3xl font-bold text-text text-center font-display">Home</h1>
-          <div className='m-4 flex flex-row justify-center gap-4'>
-            <Button asChild size="lg" variant={"outline"}>
-              <Link href="/protected/dashboard">Dashboard</Link>
-            </Button>
-            <Button asChild size="lg" variant={"outline"}>
-              <Link href="/protected/upgrade">Pricing</Link>
-            </Button>
-            <Button asChild size="lg" disabled={true} variant={"outline"}>
-              <Link href="/protected/account">My Account</Link>
-            </Button>
-          </div>
-        </div>
-        <Image src="/images/mmlogo.png" alt="MarkitMinder Logo" width={100} height={100} />
-      </section>
+      <MainBanner />
       <section className="flex flex-col items-center justify-evenly p-2 w-screen">
         <h1 className="lg:text-5xl text-3xl m-4 font-bold font-display italic text-text">Why?</h1>
         <span className='lg:text-3xl text-lg m-4 w-2/3'>

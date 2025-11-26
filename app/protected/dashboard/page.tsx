@@ -30,7 +30,6 @@ import Link from "next/link";
 import { computeLocalDensityScores, LatLng } from "@/lib/spatialDensity";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
-import { FaExternalLinkAlt } from "react-icons/fa";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -111,14 +110,15 @@ const Dash = () => {
 
   const [cities, setCities] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
+  const [countriesData, setCountriesData] = useState<Array<{ name: string; cities: string[] }>>([]);
   const [places, setPlaces] = useState<Place[]>([]);
-  const [latLng, setLatLng] = useState<[number, number]>([20, 0]);
+  const [latLng, setLatLng] = useState<[number, number]>([54, -1]);
   const [cityStats, setCityStats] = useState<{ population?: number; gdp?: number; populationDensity?: number }>({});
   const [cityData, setCityData] = useState<CityData | null>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
-  const [zoom, setZoom] = useState<number>(10);
+  const [zoom, setZoom] = useState<number>(5);
   const [averageDensityScore, setAverageDensityScore] = useState<number>(0);
   const [averageMeanDistance, setAverageMeanDistance] = useState<number>(0);
 
@@ -163,78 +163,47 @@ const Dash = () => {
 
 
   useEffect(() => {
-    const fetchCountries = async () => {
+    const loadCountriesData = async () => {
       try {
-        const response = await fetch('https://countriesnow.space/api/v0.1/countries/iso', {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
+        const response = await fetch('/resources/countries_cities.json');
         
         if (!response.ok) {
-          console.error('Failed to fetch countries:', response.status, response.statusText);
+          console.error('Failed to load countries data:', response.status, response.statusText);
           return;
         }
         
         const data = await response.json();
         
-        // Check if API returned an error
-        if (data.error) {
-          console.error('API error fetching countries:', data.error);
-          return;
-        }
-        
-        if (data.data && Array.isArray(data.data)) {
-          const countryNames = data.data.map((country: { name: string }) => country.name);
+        if (Array.isArray(data)) {
+          setCountriesData(data);
+          const countryNames = data.map((country: { name: string }) => country.name);
           setCountries(countryNames);
         } else {
           console.error('Invalid countries data structure:', data);
         }
       } catch (error) {
-        console.error('Error fetching countries:', error);
+        console.error('Error loading countries data:', error);
       }
     };
-    fetchCountries();
+    loadCountriesData();
   }, []);
 
   useEffect(() => {
-    const fetchCities = async () => {
-      if (!formData.country || countries.length === 0 || !countries.includes(formData.country)) {
-        return;
-      }
-      
-      try {
-        const response = await fetch('https://countriesnow.space/api/v0.1/countries/cities', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ country: formData.country }),
-        });
-        
-        if (!response.ok) {
-          console.error('Failed to fetch cities:', response.status, response.statusText);
-          return;
-        }
-        
-        const data = await response.json();
-        
-        // Check if API returned an error
-        if (data.error) {
-          console.error('API error fetching cities:', data.error);
-          return;
-        }
-        
-        if (data.data && Array.isArray(data.data)) {
-          const cityNames = data.data.map((city: string) => city);
-          setCities(cityNames);
-        } else {
-          console.error('Invalid cities data structure:', data);
-        }
-      } catch (error) {
-        console.error('Error fetching cities:', error);
-      }
-    };
+    if (!formData.country || countriesData.length === 0 || !countries.includes(formData.country)) {
+      setCities([]);
+      return;
+    }
     
-    fetchCities();
-  }, [formData.country, countries]);
+    // Find the country in the loaded data
+    const countryData = countriesData.find((c: { name: string }) => c.name === formData.country);
+    
+    if (countryData && Array.isArray(countryData.cities)) {
+      setCities(countryData.cities);
+    } else {
+      console.error('Country not found or invalid cities data:', formData.country);
+      setCities([]);
+    }
+  }, [formData.country, countriesData, countries]);
 
 
   useEffect(() => {
@@ -444,7 +413,7 @@ const Dash = () => {
         <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Search</h2>
 
 
-        <div className="flex flex-row items-center justify-evenly w-full p-4 relative">
+        <div className="flex lg:flex-row md:flex-row flex-col items-center justify-evenly w-full p-4 relative">
           {/* Limit exceeded overlay */}
           {error?.type === 'limit_exceeded' && (
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
