@@ -15,7 +15,8 @@ const supabase = createClient(
 
 // Subscription ID mapping (Free=1, Professional=2, Enterprise=3)
 const SUBSCRIPTION_IDS: Record<string, number> = {
-  'price_1S73djLCNjnWAwZSVFfs1Yhk': 2, // Professional plan
+  'price_1SeDqGLCNjnWAwZSUUuSnCGk': 7, // Business plan
+  'price_1SeDoLLCNjnWAwZSEWhh9mRN': 2, // Professional plan
 };
 
 export async function POST(req: NextRequest) {
@@ -88,7 +89,14 @@ export async function POST(req: NextRequest) {
 }
 
 // Helper function to update user subscription in user_profiles table
-async function updateUserSubscription(userId: string, subscriptionId: number): Promise<void> {
+async function updateUserSubscription(
+  userId: string, 
+  subscriptionId: number, 
+  options?: {
+    setSubscriptionStarted?: boolean;
+    updateLastPayment?: boolean;
+  }
+): Promise<void> {
   try {
     // Check if user_profiles record exists
     const { data: existingRecord, error: fetchError } = await supabase
@@ -102,13 +110,35 @@ async function updateUserSubscription(userId: string, subscriptionId: number): P
       throw new Error('Failed to fetch user data');
     }
 
+    const updateData: any = {
+      subscription_id: subscriptionId
+    };
+
+    // Set subscription_started_at if this is a new subscription (and not already set)
+    if (options?.setSubscriptionStarted) {
+      // Only set if not already set (to preserve original subscription start date)
+      if (!existingRecord?.subscription_started_at) {
+        updateData.subscription_started_at = new Date().toISOString();
+      }
+      // Reset cancellation fields if resubscribing
+      if (subscriptionId > 1) {
+        updateData.subscription_cancelled = false;
+        updateData.subscription_cancelled_at = null;
+        updateData.cancellation_reason = null;
+        updateData.cancellation_reason_code = null;
+      }
+    }
+
+    // Update last_stripe_payment_at for recurring payments
+    if (options?.updateLastPayment) {
+      updateData.last_stripe_payment_at = new Date().toISOString();
+    }
+
     if (existingRecord) {
       // Update existing record
       const { error: updateError } = await supabase
         .from('user_profiles')
-        .update({
-          subscription_id: subscriptionId
-        })
+        .update(updateData)
         .eq('user_id', userId);
 
       if (updateError) {
@@ -121,7 +151,8 @@ async function updateUserSubscription(userId: string, subscriptionId: number): P
         .from('user_profiles')
         .insert({
           user_id: userId,
-          subscription_id: subscriptionId
+          subscription_id: subscriptionId,
+          ...updateData
         });
 
       if (insertError) {
@@ -134,6 +165,44 @@ async function updateUserSubscription(userId: string, subscriptionId: number): P
 
   } catch (error) {
     console.error('Error updating user subscription:', error);
+    throw error;
+  }
+}
+
+// Helper function to update cancellation fields in user_profiles table
+async function updateSubscriptionCancellation(
+  userId: string,
+  cancellationReason?: string,
+  cancellationReasonCode?: string
+): Promise<void> {
+  try {
+    const updateData: any = {
+      subscription_cancelled: true,
+      subscription_cancelled_at: new Date().toISOString()
+    };
+
+    if (cancellationReason) {
+      updateData.cancellation_reason = cancellationReason;
+    }
+
+    if (cancellationReasonCode) {
+      updateData.cancellation_reason_code = cancellationReasonCode;
+    }
+
+    const { error: updateError } = await supabase
+      .from('user_profiles')
+      .update(updateData)
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error updating subscription cancellation:', updateError);
+      throw new Error('Failed to update cancellation status');
+    }
+
+    console.log(`Successfully updated cancellation status for user ${userId}`);
+
+  } catch (error) {
+    console.error('Error updating subscription cancellation:', error);
     throw error;
   }
 }
@@ -182,8 +251,10 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       return;
     }
 
-    // Update user subscription
-    await updateUserSubscription(user.id, subscriptionId);
+    // Update user subscription and set subscription_started_at for new subscriptions
+    await updateUserSubscription(user.id, subscriptionId, {
+      setSubscriptionStarted: true
+    });
     
     console.log(`Successfully updated subscription for user ${user.id} to subscription ID ${subscriptionId}`);
 
@@ -230,8 +301,10 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
       return;
     }
 
-    // Update user subscription
-    await updateUserSubscription(user.id, subscriptionId);
+    // Update user subscription and set subscription_started_at for new subscriptions
+    await updateUserSubscription(user.id, subscriptionId, {
+      setSubscriptionStarted: true
+    });
     
     console.log(`Successfully created subscription for user ${user.id} with subscription ID ${subscriptionId}`);
 
@@ -313,10 +386,14 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       return;
     }
 
-    // Downgrade to free plan (subscription ID 1)
-    await updateUserSubscription(user.id, 1);
+    // Update cancellation status (database job will handle subscription_id downgrade after 1 month)
+    await updateSubscriptionCancellation(
+      user.id,
+      'Subscription deleted via Stripe webhook',
+      'STRIPE_DELETED'
+    );
     
-    console.log(`Successfully downgraded user ${user.id} to free plan`);
+    console.log(`Successfully marked subscription as cancelled for user ${user.id}. Database job will downgrade after 1 month.`);
 
   } catch (error) {
     console.error('Error handling subscription deleted:', error);
@@ -364,8 +441,10 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
         return;
       }
 
-      // Update user subscription
-      await updateUserSubscription(user.id, subscriptionId);
+      // Update user subscription and last payment date for recurring payments
+      await updateUserSubscription(user.id, subscriptionId, {
+        updateLastPayment: true
+      });
       
       console.log(`Successfully processed payment for user ${user.id} with subscription ID ${subscriptionId}`);
     }

@@ -180,7 +180,6 @@ export const IsCloseMatch = (input: string, check: string): boolean => {
     }
   }
 
-  console.log("Matching: ", matching);
   return matching >= normalizedInput.length / 2;
 }
 
@@ -471,9 +470,14 @@ export const columns: ColumnDef<Place>[] = [
 
 ]
 
-export interface UKCityAgeData {
-  area: string;
-  allAges: number;
+export interface CityData {
+  DistrictCode: string;
+  Population: number;
+  Area: number;
+  Name: string;
+  Country: string;
+  GDP: number;
+  Centroid: [number, number];
   aged0to17: number;
   aged18to24: number;
   aged25to49: number;
@@ -481,15 +485,14 @@ export interface UKCityAgeData {
   aged65plus: number;
 }
 
-export async function loadUKAgeDemographics(): Promise<UKCityAgeData[]> {
+export async function loadUKAgeDemographics(): Promise<CityData[]> {
   try {
     const response = await fetch('/resources/UK_AgeDemographicsByCity.csv');
     const csvText = await response.text();
     
     const lines = csvText.split('\n');
-    const headers = lines[0].split(',');
     
-    const data: UKCityAgeData[] = [];
+    const data: CityData[] = [];
     
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -511,30 +514,25 @@ export async function loadUKAgeDemographics(): Promise<UKCityAgeData[]> {
           current += char;
         }
       }
+
       values.push(current.trim());
-      
-      // Skip rows with missing data (marked with "-")
-      if (values.some(val => val === '-')) continue;
-      
-      const area = values[0].replace(/"/g, '');
-      const allAges = parseInt(values[1].replace(/"/g, '').replace(/,/g, '')) || 0;
-      const aged0to17 = parseInt(values[2].replace(/"/g, '').replace(/,/g, '')) || 0;
-      const aged18to24 = parseInt(values[3].replace(/"/g, '').replace(/,/g, '')) || 0;
-      const aged25to49 = parseInt(values[4].replace(/"/g, '').replace(/,/g, '')) || 0;
-      const aged50to64 = parseInt(values[5].replace(/"/g, '').replace(/,/g, '')) || 0;
-      const aged65plus = parseInt(values[6].replace(/"/g, '').replace(/,/g, '')) || 0;
-      
+
       data.push({
-        area,
-        allAges,
-        aged0to17,
-        aged18to24,
-        aged25to49,
-        aged50to64,
-        aged65plus
+        DistrictCode: values[0],
+        Name: values[1],
+        Country: values[2],
+        GDP: parseFloat(values[3]),
+        Area: parseFloat(values[4]),
+        Centroid: [parseFloat(values[5]), parseFloat(values[6])],
+        Population: parseInt(values[7]),
+        aged0to17: parseInt(values[8]),
+        aged18to24: parseInt(values[9]),
+        aged25to49: parseInt(values[10]),
+        aged50to64: parseInt(values[11]),
+        aged65plus: parseInt(values[12])
       });
     }
-    
+
     return data;
   } catch (error) {
     console.error('Error loading UK age demographics:', error);
@@ -542,13 +540,13 @@ export async function loadUKAgeDemographics(): Promise<UKCityAgeData[]> {
   }
 }
 
-export function findCityAgeData(cityName: string, cityData: UKCityAgeData[]): UKCityAgeData | null {
+export function findCityAgeData(cityName: string, cityData: CityData[]): CityData | null {
   const normalizedCityName = cityName.toLowerCase().trim();
   
   return cityData.find(city => {
-    const normalizedArea = city.area.toLowerCase().trim();
-    return normalizedArea === normalizedCityName || 
-           normalizedArea.includes(normalizedCityName) ||
-           normalizedCityName.includes(normalizedArea);
+    const normalizedName = city.Name.toLowerCase().trim();
+    return normalizedName === normalizedCityName || 
+    normalizedName.includes(normalizedCityName) ||
+           normalizedCityName.includes(normalizedName) || IsCloseMatch(normalizedCityName, normalizedName);
   }) || null;
 }

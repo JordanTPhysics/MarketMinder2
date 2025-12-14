@@ -1,17 +1,46 @@
 import { Work_Sans, Fira_Code, Space_Grotesk } from "next/font/google";
+import Head from "next/head";
 import "./globals.css";
-import Footer from "@/components/Footer";
-import Header from "@/components/Header";
-import { RouteProgress } from "@/components/route-progress";
+import Footer from "@/components/ui/Footer";
+import Header from "@/components/ui/Header";
+import { RouteProgress } from "@/components/ui/route-progress";
+import Script from "next/script";
+import { Metadata } from "next";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
-
-export const metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "MarkitMinder",
-  description: "Collect and Analyse business data in a matter of seconds. Prospective Buyers, Marketing Teams and Local Business Owners",
+export const metadata: Metadata = {
+  metadataBase: new URL("https://market-minder.vercel.app"),
+  title: {
+    default: "MarkitMinder – Data-Driven Local Business Insights",
+    template: "%s | MarkitMinder",
+  },
+  description:
+    "MarkitMinder helps businesses analyse, compare, and rate local companies using real-world market and Google Maps data.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: "https://market-minder.vercel.app",
+    title: "MarkitMinder – Data-Driven Local Business Insights",
+    description:
+      "Analyse local businesses using real-world market data, reviews, and competitive insights.",
+    siteName: "MarkitMinder",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "MarkitMinder dashboard preview",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MarkitMinder – Local Business Analytics",
+    description:
+      "Discover market insights, competitor analysis, and local business ratings.",
+    images: ["/og-image.png"],
+  },
 };
 
 const workSans = Work_Sans({
@@ -39,20 +68,45 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${workSans.variable} ${firaCode.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
-      <body className="text-text bg-gradient-to-b from-slate-800 to-violet-800 h-full flex flex-col align-middle items-center text-center">
-        {/* <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        > */}
+      <Head>
+      <Script
+          id="schema-software-app"
+          type="application/ld+json"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              name: "MarkitMinder",
+              applicationCategory: "BusinessApplication",
+              operatingSystem: "Web",
+              url: "https://market-minder.vercel.app",
+              description:
+                "A SaaS platform for analysing, rating, and comparing local businesses using market and Google Maps data.",
+              offers: {
+                "@type": "Offer",
+                price: "40",
+                priceCurrency: "GBP",
+              },
+              softwareAddOn: [
+                {
+                  "@type": "SoftwareApplication",
+                  name: "Market Analysis",
+                  description: "Analyse the market for a local business",
+                },
+              ],
+            }),
+          }}
+        />
+      </Head>
+      <body className="text-text bg-gradient-to-b from-slate-800 to-violet-800 flex flex-col align-middle items-center text-center">
+
         <div className="">
           <RouteProgress />
-          <Header/>
+          <Header />
           {children}
           <Footer />
         </div>
-        {/* </ThemeProvider> */}
       </body>
     </html>
   );

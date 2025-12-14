@@ -123,9 +123,55 @@ export class EnhancedApiClient {
     }, onError);
   }
 
+
+  async getGoogleSearchRanking(params: {
+    placeName: string;
+    location: string;
+    type: string;
+  }, onError?: (error: RequestError) => void) {
+    return this.makeRequest('/api/google-search-ranking', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }, onError);
+  }
+
+  async getGoogleCustomSearch(params: {
+    query: string;
+  }, onError?: (error: RequestError) => void) {
+    return this.makeRequest('/api/google-custom-search', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }, onError);
+  }
+
   /**
-   * Calculate time until daily reset (next day at midnight)
+   * Scrape emails and phone numbers from a list of URLs
    */
+  async scrapeContacts(params: {
+    urls: string[];
+    country?: string;
+  }, onError?: (error: RequestError) => void) {
+    return this.makeRequest<{
+      results: Array<{
+        url: string;
+        emails: string[];
+        phoneNumbers: string[];
+        error?: string;
+        success: boolean;
+      }>;
+      summary: {
+        total: number;
+        successful: number;
+        failed: number;
+        totalEmails: number;
+        totalPhoneNumbers: number;
+      };
+    }>('/api/scrape-contacts', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    }, onError);
+  }
+
   private calculateTimeUntilReset(): string {
     const now = new Date();
     const tomorrow = new Date(now);

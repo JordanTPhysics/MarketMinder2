@@ -9,6 +9,10 @@ import {
   Title,
   Tooltip,
   Legend,
+  LineElement,
+  PointElement,
+  LineController,
+  Filler,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
@@ -18,34 +22,12 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  LineElement,
+  PointElement,
+  LineController,
+  Filler,
 );
-
-interface MetricBarProps {
-  label: string;
-  value: number;
-  max?: number;
-  suffix?: string;
-}
-
-const MetricBar: React.FC<MetricBarProps> = ({ label, value, max = 100, suffix = "%" }) => {
-  const percent = Math.round((value / max) * 100);
-  return (
-    <div className="flex items-center mb-4 w-full">
-      <div className="w-48 text-left font-semibold text-text">{label}</div>
-      <div className="flex-1 bg-slate-700 rounded-md h-6 mx-2 relative">
-        <div
-          className="bg-violet-500 h-6 rounded-md transition-all duration-300"
-          style={{ width: `${percent}%` }}
-        ></div>
-        <span className="absolute right-2 top-0 h-6 flex items-center font-semibold text-white">
-          {Number.isInteger(value) ? value.toString() : value.toFixed(1)}
-          {suffix}
-        </span>
-      </div>
-    </div>
-  );
-};
 
 interface BusinessIntelligenceProps {
   averageReviewScore: number;
@@ -66,16 +48,16 @@ const BusinessIntelligence: React.FC<BusinessIntelligenceProps> = ({
   places,
 }) => {
   // Find user's business in results
-  const userBusiness = userBusinessName 
-    ? places.find(place => 
-        place.PlaceName.toLowerCase().includes(userBusinessName.toLowerCase()) ||
-        userBusinessName.toLowerCase().includes(place.PlaceName.toLowerCase())
-      )
+  const userBusiness = userBusinessName
+    ? places.find(place =>
+      place.PlaceName.toLowerCase().includes(userBusinessName.toLowerCase()) ||
+      userBusinessName.toLowerCase().includes(place.PlaceName.toLowerCase())
+    )
     : null;
 
   // Calculate average business score as percentage of max
-  const averageBusinessScorePercentage = maxBusinessScore > 0 
-    ? (averageBusinessScore / maxBusinessScore) * 100 
+  const averageBusinessScorePercentage = maxBusinessScore > 0
+    ? (averageBusinessScore / maxBusinessScore) * 100
     : 0;
 
   // Calculate user's business score as percentage of max
@@ -87,15 +69,15 @@ const BusinessIntelligence: React.FC<BusinessIntelligenceProps> = ({
   const sortedPlaces = [...places].sort((a, b) => (b.BusinessScore || 0) - (a.BusinessScore || 0));
   const chartLabels = sortedPlaces.map((place, index) => {
     // Truncate long names for better display
-    const name = place.PlaceName.length > 20 
-      ? place.PlaceName.substring(0, 20) + '...' 
+    const name = place.PlaceName.length > 20
+      ? place.PlaceName.substring(0, 20) + '...'
       : place.PlaceName;
     return `${index + 1}. ${name}`;
   });
   const chartScores = sortedPlaces.map(place => place.BusinessScore || 0);
-  
+
   // Find index of user's business in sorted array
-  const userBusinessIndex = userBusiness 
+  const userBusinessIndex = userBusiness
     ? sortedPlaces.findIndex(p => p.PlaceID === userBusiness.PlaceID)
     : -1;
 
@@ -118,11 +100,25 @@ const BusinessIntelligence: React.FC<BusinessIntelligenceProps> = ({
     labels: chartLabels,
     datasets: [
       {
+        label: 'Average',
+        data: chartLabels.map(() => averageBusinessScore),
+        type: 'line' as const,
+        borderColor: "rgba(34, 197, 94, 1)", // Green color
+        backgroundColor: "rgba(34, 197, 94, 0.1)", // Light green fill
+        borderWidth: 2,
+        borderDash: [5, 5], // Dashed line for better visibility
+        fill: false,
+        pointRadius: 0, // Hide points on the line
+        pointHoverRadius: 0,
+        order: 2, // Render this dataset first (behind bars)
+      },
+      {
         label: 'Business Score',
         data: chartScores,
         backgroundColor: backgroundColors,
         borderColor: borderColors,
         borderWidth: 1,
+        order: 1, // Render this dataset second (on top of line)
       },
     ],
   };
@@ -184,46 +180,35 @@ const BusinessIntelligence: React.FC<BusinessIntelligenceProps> = ({
     },
   };
 
-  // Metrics for display
-  const metrics = [
-    { label: "Review Score", value: averageReviewScore, max: 5, suffix: "/5" },
-    { label: "Average Business Score", value: averageBusinessScorePercentage, max: 100, suffix: "%" },
-    userBusiness ? { label: "Your Score", value: userBusinessScorePercentage, max: 100, suffix: "%" } : undefined,
-  ].filter(Boolean) as MetricBarProps[];
-
   return (
-    <section className="w-full md:w-2/3 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border flex flex-col">
-            <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Business Intelligence</h2>
-            <h3 className="text-xl font-bold text-text mb-6 text-left pb-2">{userBusinessName || "All Businesses"}</h3>
-      <div className="flex flex-col gap-2 mb-6">
-        {metrics.map((metric) => (
-          <MetricBar key={metric.label} {...metric} />
-        ))}
-      </div>
-      
-      {/* Business Scores Chart */}
-      <div className="mt-6">
-        <div className="h-96 w-full">
-          <Bar data={chartData} options={chartOptions} />
+    <section className="w-full md:w-1/2 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border flex flex-col">
+      <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Business Intelligence</h2>
+      <div className="flex flex-col gap-2 text-text text-left text-sm mb-4 border-2 border-border rounded-sm bg-slate-700 p-2">
+        <h3 className="text-xl font-bold text-text mb-6 text-left pb-2">{userBusiness ? `${userBusiness.PlaceName} (${userBusinessName})` : "All Businesses"}</h3>
+        <div className="flex flex-row justify-between mr-4">
+          <span className="text-xl font-bold">Review Score: {userBusiness?.Rating}</span>
+          <span className="italic text-lg">Average: {averageReviewScore?.toFixed(1)}</span>
         </div>
-        <div className="mt-4 flex flex-wrap gap-4 text-sm text-text/70">
-          <div className="flex items-center">
-            <span className="inline-block w-4 h-4 bg-violet-500 rounded mr-2"></span>
-            Other Businesses
-          </div>
-          {userBusiness && userBusinessIndex >= 0 && (
-            <div className="flex items-center">
-              <span className="inline-block w-4 h-4 bg-amber-500 rounded mr-2"></span>
-              Your Business (Rank #{userBusinessIndex + 1})
-            </div>
-          )}
-          <div className="flex items-center">
-            <span className="inline-block w-4 h-4 border-2 border-green-500 rounded mr-2"></span>
-            Average: {averageBusinessScore.toFixed(1)}
-          </div>
+        <div className="flex flex-row justify-between mr-4">
+          <span className="text-xl font-bold">Business Score: {userBusiness?.BusinessScore}</span>
+          <span className="italic text-lg">Average: {averageBusinessScore?.toFixed(1)}</span>
         </div>
       </div>
-      
+      <div className="w-full h-96">
+        
+        <Bar data={chartData as any} options={chartOptions} />
+      </div>
+      {userBusiness && userBusinessIndex >= 0 && (
+        <div className="flex items-center">
+          <span className="inline-block w-4 h-4 bg-amber-500 rounded mr-2"></span>
+          {userBusiness.PlaceName} (Rank #{userBusinessIndex + 1})
+        </div>
+      )}
+      <div className="flex items-center">
+        <span className="inline-block w-4 h-4 border-2 border-green-500 rounded mr-2"></span>
+        Average: {averageBusinessScore?.toFixed(1)}
+      </div>
+
       {/* Show note if business name provided but no match found */}
       {userBusinessName && !userBusiness && (
         <div className="mt-6 p-4 bg-yellow-100 border border-yellow-400 rounded-lg">

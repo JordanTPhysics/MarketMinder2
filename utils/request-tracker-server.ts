@@ -21,6 +21,8 @@ export interface IncrementResult {
 export async function checkDailyRequestLimitServer(userId: string): Promise<boolean> {
   try {
     const supabase = await createClient();
+
+    console.log('Checking daily request limit for user:', userId);
     
     const { data, error } = await supabase.rpc('check_daily_request_limit', {
       p_user_id: userId

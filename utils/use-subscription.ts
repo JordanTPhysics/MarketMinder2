@@ -74,8 +74,9 @@ export function useSubscription() {
     loading, 
     error,
     isFree: subscription === 1,
-    isProfessional: subscription === 2,
-    isEnterprise: subscription === 3,
+    isBusiness: subscription === 2,
+    isProfessional: subscription === 3,
+    isEnterprise: subscription === 4,
     hasPaidPlan: subscription && subscription > 1
   };
 }

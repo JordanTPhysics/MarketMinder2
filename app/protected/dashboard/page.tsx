@@ -8,11 +8,13 @@ const InteractiveMap = dynamic(() => import('../../../components/InteractiveMap'
   ssr: false,
 });
 
-import { DataTable } from "../../../components/ui/data-table";
-import { columns, Place, IsCloseMatch, calculateUptime } from "../../../lib/places";
-import { ComboboxDropdown } from "../../../components/ui/combobox";
+import { columns, Place, IsCloseMatch, FindCloseMatch, calculateUptime, CityData, loadUKAgeDemographics } from "../../../lib/places";
 import BusinessIntelligence from "../../../components/BusinessIntelligence";
 import AreaDemographics from "../../../components/AreaDemographics";
+import GoogleSearchResult from "../../../components/GoogleSearchRanking";
+import ScrapeContacts from "@/components/ScrapeContacts";
+
+import { DataTable } from "../../../components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +23,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ComboboxDropdown } from "../../../components/ui/combobox";
+
 import { useUser } from "../../../utils/use-user";
 import { useRequestStatus } from "../../../utils/request-status";
 import { RequestStatusDisplay } from "../../../components/RequestStatusDisplay";
@@ -30,15 +34,11 @@ import Link from "next/link";
 import { computeLocalDensityScores, LatLng } from "@/lib/spatialDensity";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
+import { useSubscription } from "../../../utils/use-subscription";
+import { getDashboardRoute } from "../../../utils/dashboard-routing";
+import { useRouter } from "next/navigation";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-interface CityData {
-  populationDensity: string | null;
-  ageDemographics: string | null;
-  employmentStats: string | null;
-  gdp: string | null;
-}
 
 const getPlacesFromData = (data: any, name: string) => {
   const places = [];
@@ -78,34 +78,22 @@ const getPlacesFromData = (data: any, name: string) => {
   return places;
 }
 
-const fetchWikidataCityStats = async (city: string, country: string) => {
-  // SPARQL query for city population, area, and GDP (if available)
-  const endpoint = "https://query.wikidata.org/sparql";
-  const query = `
-    SELECT ?population ?area ?gdp WHERE {
-      ?city rdfs:label "${city}"@en.
-      ?city wdt:P17 ?country.
-      ?country rdfs:label "${country}"@en.
-      OPTIONAL { ?city wdt:P1082 ?population. }
-      OPTIONAL { ?city wdt:P2046 ?area. }
-      OPTIONAL { ?city wdt:P2131 ?gdp. }
-    } LIMIT 1
-  `;
-  const url = endpoint + "?query=" + encodeURIComponent(query) + "&format=json";
-  const res = await fetch(url);
-  const data = await res.json();
-  if (data.results.bindings.length === 0) return {};
-  const row = data.results.bindings[0];
-  const population = row.population ? parseInt(row.population.value) : undefined;
-  const area = row.area ? parseFloat(row.area.value) : undefined;
-  const gdp = row.gdp ? parseFloat(row.gdp.value) : undefined;
-  const populationDensity = population && area ? Math.round(population / area) : undefined;
-  return { population, area, gdp, populationDensity };
-};
-
 const Dash = () => {
   const { user, loading: userLoading, error: userError } = useUser();
   const { status, error, loading: statusLoading, refreshStatus, setError } = useRequestStatus(user?.id);
+  const { subscription, loading: subscriptionLoading } = useSubscription();
+  const router = useRouter();
+
+  // Redirect to appropriate dashboard based on subscription
+  // useEffect(() => {
+  //   if (!subscriptionLoading && subscription) {
+  //     const correctRoute = getDashboardRoute(subscription);
+  //     // Only redirect if we're not already on the correct route
+  //     if (correctRoute !== '/protected/dashboard') {
+  //       router.replace(correctRoute);
+  //     }
+  //   }
+  // }, [subscription, subscriptionLoading, router]);
 
 
   const [cities, setCities] = useState<string[]>([]);
@@ -113,8 +101,6 @@ const Dash = () => {
   const [countriesData, setCountriesData] = useState<Array<{ name: string; cities: string[] }>>([]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [latLng, setLatLng] = useState<[number, number]>([54, -1]);
-  const [cityStats, setCityStats] = useState<{ population?: number; gdp?: number; populationDensity?: number }>({});
-  const [cityData, setCityData] = useState<CityData | null>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -122,12 +108,15 @@ const Dash = () => {
   const [averageDensityScore, setAverageDensityScore] = useState<number>(0);
   const [averageMeanDistance, setAverageMeanDistance] = useState<number>(0);
 
+
   // Column visibility state for paid-only optional columns
   const [columnVisibility, setColumnVisibility] = useState<{
+    phone: boolean;
     openHours: boolean;
     meanDistance: boolean;
     densityScore: boolean;
   }>({
+    phone: false,
     openHours: false,
     meanDistance: false,
     densityScore: false,
@@ -166,14 +155,14 @@ const Dash = () => {
     const loadCountriesData = async () => {
       try {
         const response = await fetch('/resources/countries_cities.json');
-        
+
         if (!response.ok) {
           console.error('Failed to load countries data:', response.status, response.statusText);
           return;
         }
-        
+
         const data = await response.json();
-        
+
         if (Array.isArray(data)) {
           setCountriesData(data);
           const countryNames = data.map((country: { name: string }) => country.name);
@@ -193,10 +182,10 @@ const Dash = () => {
       setCities([]);
       return;
     }
-    
+
     // Find the country in the loaded data
     const countryData = countriesData.find((c: { name: string }) => c.name === formData.country);
-    
+
     if (countryData && Array.isArray(countryData.cities)) {
       setCities(countryData.cities);
     } else {
@@ -204,14 +193,6 @@ const Dash = () => {
       setCities([]);
     }
   }, [formData.country, countriesData, countries]);
-
-
-  useEffect(() => {
-    // Fetch city stats from Wikidata when places are set and city/country are selected
-    if (places.length > 0 && formData.city && formData.country) {
-      fetchWikidataCityStats(formData.city, formData.country).then(setCityStats);
-    }
-  }, [places, formData.city, formData.country]);
 
   useEffect(() => {
     if (places.length > 0) {
@@ -246,6 +227,8 @@ const Dash = () => {
           }, setError);
 
           setPlaces(getPlacesFromData(data, formData.name));
+          setZoom(15);
+          setLatLng([latitude, longitude]);
 
           // Refresh status after successful request
           await refreshStatus();
@@ -288,6 +271,7 @@ const Dash = () => {
   const visibleColumns = React.useMemo(() => {
     return columns.filter(col => {
       const colId = (col as any).id || (col as any).accessorKey;
+      if (colId === 'phone') return columnVisibility.phone;
       if (colId === 'openHours') return columnVisibility.openHours;
       if (colId === 'uptime') return columnVisibility.openHours; // Uptime shown when openHours is visible
       if (colId === 'meanDistance') return columnVisibility.meanDistance;
@@ -323,13 +307,14 @@ const Dash = () => {
 
   const downloadCsv = (filename: string) => {
     // Build headers based on visible columns
-    const headers = ["Place Name", "Address", "Rating", "Review Count", "Business Score", "Phone", "Url"];
+    const headers = ["Place Name", "Address", "Rating", "Review Count", "Business Score", "Url"];
     if (columnVisibility.openHours) {
       headers.push("Open Hours");
       headers.push("Uptime");
     }
     if (columnVisibility.meanDistance) headers.push("Proximity");
     if (columnVisibility.densityScore) headers.push("Density Score");
+    if (columnVisibility.phone) headers.push("Phone");
 
     const csvHeaders = headers.join(",");
     const csvContent = places.map(place => {
@@ -339,9 +324,12 @@ const Dash = () => {
         escapeCsvValue(place.Rating),
         escapeCsvValue(place.RatingCount),
         escapeCsvValue(place.BusinessScore.toFixed(1)),
-        escapeCsvValue(place.Phone),
         escapeCsvValue(place.Url)
       ];
+
+      if (columnVisibility.phone) {
+        baseRow.push(escapeCsvValue(place.Phone));
+      }
 
       if (columnVisibility.openHours) {
         const sanitizedOpenHours = sanitizeForCsv(place.OpenHours || "");
@@ -469,11 +457,21 @@ const Dash = () => {
 
             <PaidOnly
               fallback={<div>Paid users can select additional data fields.</div>}
-              >
-            
+            >
+
               <div className="mb-4 p-3 bg-foreground/50 rounded-md border border-border">
                 <label className="block text-sm font-semibold text-text text-left mb-2">Premium Data Fields:</label>
                 <div className="flex flex-col gap-2">
+                  <div className="flex items-center space-x-2 py-2">
+                    <Checkbox
+                      id="All"
+                      checked={columnVisibility.phone && columnVisibility.openHours && columnVisibility.meanDistance && columnVisibility.densityScore}
+                      onCheckedChange={(checked) =>
+                        setColumnVisibility(prev => ({ ...prev, phone: checked === true, openHours: checked === true, meanDistance: checked === true, densityScore: checked === true }))
+                      }
+                    />
+                    <label htmlFor="All" className="text-sm text-text cursor-pointer">Check All</label>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="openHours"
@@ -484,6 +482,16 @@ const Dash = () => {
                     />
                     <label htmlFor="openHours" className="text-sm text-text cursor-pointer">Open Hours</label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="phone"
+                        checked={columnVisibility.phone}
+                        onCheckedChange={(checked) =>
+                          setColumnVisibility(prev => ({ ...prev, phone: checked === true }))
+                        }
+                      />
+                      <label htmlFor="phone" className="text-sm text-text cursor-pointer">Phone Number</label>
+                    </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="meanDistance"
@@ -557,9 +565,9 @@ const Dash = () => {
                                 </div>
                                 {place.Url && (
                                   <div className="pt-2">
-                                    <a 
-                                      href={place.Url} 
-                                      target="_blank" 
+                                    <a
+                                      href={place.Url}
+                                      target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-blue-600 hover:text-blue-800 underline text-xs"
                                     >
@@ -638,7 +646,7 @@ const Dash = () => {
               </div>
             }
           >
-            <div className="flex flex-col md:flex-row gap-4 w-full max-w-[75vw] mx-auto items-stretch">
+            <div className="flex flex-col md:flex-row gap-4 w-full max-w-[95vw] mx-auto items-stretch">
               <BusinessIntelligence
                 averageReviewScore={
                   places.length > 0
@@ -657,30 +665,28 @@ const Dash = () => {
                 }
                 userBusinessName={formData.name.trim()}
                 places={places}
-                gdp={cityStats.gdp}
-                population={cityStats.population}
-                populationDensity={cityStats.populationDensity}
-
               />
               <AreaDemographics
-                name={formData.city + ", " + formData.country}
-                userBusinessName={formData.name.trim()}
-                places={places}
-                population={cityStats.population}
-                populationDensity={cityStats.populationDensity}
+                name={formData.city}
               />
             </div>
 
           </PaidOnly>
         ) : null}
-        {places.length > 0 && cityData && (
-          <div className="mt-4">
-            <h3 className="text-lg font-semibold">City Data</h3>
-            <pre className="text-xs font-mono p-3 rounded border overflow-auto">
-              {JSON.stringify(cityData, null, 2)}
-            </pre>
-          </div>
-        )}
+
+      </section>
+      <section className="flex flex-col items-center justify-center min-h-96 w-screen p-2 mb-4 relative z-0">
+        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Google Search Ranking</h2>
+        <div className="w-full">
+          {places.length > 0 && <GoogleSearchResult placeName={formData.name.trim() || ''} location={formData.city.trim() || ''} type={formData.type.trim()} />}
+        </div>
+      </section>
+
+      <section className="flex flex-col items-center justify-center min-h-96 w-screen p-2 mb-4 relative z-0">
+        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Scrape Contacts</h2>
+        <div className="w-full">
+          {places.length > 0 && <ScrapeContacts places={places} country={formData.country.trim()} city={formData.city.trim()} type={formData.type.trim()} />}
+        </div>
       </section>
     </div>
   </>;

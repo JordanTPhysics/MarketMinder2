@@ -27,11 +27,13 @@ import React, { useState } from "react"
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
+    getRowClassName?: (row: TData) => string
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
+    getRowClassName,
 }: DataTableProps<TData, TValue>) {
 
     const [sorting, setSorting] = useState<SortingState>([])
@@ -71,7 +73,7 @@ export function DataTable<TData, TValue>({
     })
 
     return <div >
-        <div className="rounded-md border-2 border-border bg-foreground w-[95vw]">
+        <div className="rounded-md border-2 border-border bg-foreground w-inherit">
             <Table>
                 <TableHeader className="border-border text-text">
                     {table.getHeaderGroups().map((headerGroup) => (
@@ -95,9 +97,13 @@ export function DataTable<TData, TValue>({
                 </TableHeader>
                 <TableBody>
                     {table.getRowModel().rows?.length ? (
-                        table.getRowModel().rows.map((row) => (
+                        table.getRowModel().rows.map((row) => {
+                            const rowClassName = getRowClassName 
+                                ? getRowClassName(row.original)
+                                : "";
+                            return (
                             <TableRow
-                                className="hover:bg-background border-border border-r-2 text-text"
+                                className={`hover:bg-background border-border border-r-2 text-text ${rowClassName}`}
                                 key={row.id}
                                 data-state={row.getIsSelected() && "selected"}
                             >
@@ -110,7 +116,8 @@ export function DataTable<TData, TValue>({
                                     </TableCell>
                                 ))}
                             </TableRow>
-                        ))
+                            );
+                        })
                     ) : (
                         <TableRow>
                             <TableCell colSpan={columns.length} className=" text-center border-border border-r-2">

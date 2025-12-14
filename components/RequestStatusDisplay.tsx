@@ -2,8 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { RequestStatus, RequestError } from '../utils/request-status';
-import { Button } from './ui/button';
+import { RequestStatus, RequestError } from '@/utils/request-status';
+import { Button } from '@/components/ui/button';
 
 interface RequestStatusDisplayProps {
   status: RequestStatus | null;

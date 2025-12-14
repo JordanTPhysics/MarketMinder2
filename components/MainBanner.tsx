@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react'
-import { Button } from './ui/button'
+import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import Image from 'next/image'
 import useMediaQuery from '@/lib/media-query'
+import { DashboardLink } from '@/components/ui/DashboardLink'
 
 const MainBanner = () => {
 

@@ -36,6 +36,8 @@ export async function getUserRequestStatsClient(userId: string) {
       .from('user_request_tracking')
       .select('*')
       .eq('user_id', userId)
+      .order('current_day', { ascending: false })
+      .limit(1)
       .single();
 
     if (error) {

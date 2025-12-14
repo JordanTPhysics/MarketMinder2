@@ -1,61 +1,34 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { loadUKAgeDemographics, findCityAgeData, UKCityAgeData } from "../lib/places";
+import { loadUKAgeDemographics, CityData, IsCloseMatch } from "../lib/places";
+import { Pie } from "react-chartjs-2";
+import { BarElement, CategoryScale, Chart, ChartData, ChartOptions, Legend, LinearScale, Tooltip, ArcElement } from "chart.js";
 
-interface MetricBarProps {
-  label: string;
-  value: number;
-  max?: number;
-  suffix?: string;
-}
-
-const MetricBar: React.FC<MetricBarProps> = ({ label, value, max = 100, suffix = "%" }) => {
-  const percent = Math.round((value / max) * 100);
-  return (
-    <div className="flex items-center mb-4 w-full">
-      <div className="w-48 text-left font-semibold text-text">{label}</div>
-      <div className="flex-1 bg-slate-700 rounded-md h-6 mx-2 relative">
-        <div
-          className="bg-violet-500 h-6 rounded-md transition-all duration-300"
-          style={{ width: `${percent}%` }}
-        ></div>
-        <span className="absolute right-2 top-0 h-6 flex items-center font-semibold text-white">
-          {Number.isInteger(value) ? value.toString() : value.toFixed(1)}
-          {suffix}
-        </span>
-      </div>
-    </div>
-  );
-};
+Chart.register(Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement);
 
 interface AreaDemographicsProps {
   name: string;
-  userBusinessName: string;
-  places: any[];
-  population?: number;
-  populationDensity?: number;
 }
 
 const AreaDemographics: React.FC<AreaDemographicsProps> = ({
-  userBusinessName,
-  places,
-  population,
-  populationDensity,
-
   name,
 }) => {
-  const [cityData, setCityData] = useState<UKCityAgeData | null>(null);
+  const [cityData, setCityData] = useState<CityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  const [averageGDP, setAverageGDP] = useState<string>("");
+  const [averagePopulation, setAveragePopulation] = useState<string>("");
+  const [averagePopulationDensity, setAveragePopulationDensity] = useState<string>("");
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         const allCityData = await loadUKAgeDemographics();
-        const foundCity = findCityAgeData(name, allCityData);
-        setCityData(foundCity);
+        setCityData(allCityData.find(c => c.Name === name || IsCloseMatch(c.Name, name)) || null);
+        setAverageGDP(allCityData.find(c => c.Name === "AVG")?.GDP.toFixed(1) || "0");
+        setAveragePopulation(allCityData.find(c => c.Name === "AVG")?.Population.toFixed(0) || "0");
+        setAveragePopulationDensity((allCityData.find(c => c.Name === "AVG")?.Population! / allCityData.find(c => c.Name === "AVG")?.Area!).toFixed(1) || "0");
         setError(null);
       } catch (err) {
         setError('Failed to load city data');
@@ -67,14 +40,6 @@ const AreaDemographics: React.FC<AreaDemographicsProps> = ({
 
     loadData();
   }, [name]);
-
-  // Find user's business in results
-  const userBusiness = userBusinessName
-    ? places.find(place =>
-      place.PlaceName.toLowerCase().includes(userBusinessName.toLowerCase()) ||
-      userBusinessName.toLowerCase().includes(place.PlaceName.toLowerCase())
-    )
-    : null;
 
   if (loading) {
     return (
@@ -103,48 +68,82 @@ const AreaDemographics: React.FC<AreaDemographicsProps> = ({
     );
   }
 
-  // Calculate age demographics percentages
-  const totalPopulation = cityData.allAges;
-  const ageDemographics = [
-    {
-      label: "Age 0-17 (%)",
-      value: Math.round((cityData.aged0to17 / totalPopulation) * 100)
-    },
-    {
-      label: "Age 18-24 (%)",
-      value: Math.round((cityData.aged18to24 / totalPopulation) * 100)
-    },
-    {
-      label: "Age 25-49 (%)",
-      value: Math.round((cityData.aged25to49 / totalPopulation) * 100)
-    },
-    {
-      label: "Age 50-64 (%)",
-      value: Math.round((cityData.aged50to64 / totalPopulation) * 100)
-    },
-    {
-      label: "Age 65+ (%)",
-      value: Math.round((cityData.aged65plus / totalPopulation) * 100)
-    },
-  ];
+  const chartOptions: ChartOptions<"pie"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: "right",
+        labels: {
+          color: "#e5e7eb", // text-text color (tailwind slate-200)
+          font: {
+            size: 16,
+            weight: "bold"
+          },
+          boxWidth: 22,
+          padding: 18
+        }
+      },
+      tooltip: {
+        enabled: true,
+        backgroundColor: "#27272a", // bg-foreground (slate-900)
+        borderColor: "#a78bfa", // border-border/violet-400
+        borderWidth: 1,
+        titleColor: "#c4b5fd", // violet-300
+        bodyColor: "#f1f5f9", // slate-50
+        bodyFont: {
+          size: 10
+        },
+        callbacks: {
+          label: function (context) {
+            const label = context.label || "";
+            const value = context.parsed;
+            return `${value} (${(value / cityData.Population * 100).toFixed(0)}%)`;
+          }
+        },
+        cornerRadius: 8,
+        padding: 12,
+        caretPadding: 6,
+        titleFont: {
+          size: 14
+        },
 
-  // Metrics for display
-  const metrics = [
-    { label: "Population", value: totalPopulation, max: 20000000, suffix: "" },
-    populationDensity !== undefined ? { label: "Population Density (/km²)", value: populationDensity, max: 20000, suffix: "" } : undefined,
-    ...ageDemographics,
-  ].filter(Boolean) as MetricBarProps[];
-
-  // Simple overall score calculation (mock, can be improved)
+      },
+    },
+  };
+  const ageDemographicsData: ChartData<"pie", number[], string> = {
+    labels: ["Age 0-17", "Age 18-24", "Age 25-49", "Age 50-64", "Age 65+"],
+    datasets: [
+      {
+        label: "Age Demographics",
+        data: [cityData.aged0to17, cityData.aged18to24, cityData.aged25to49, cityData.aged50to64, cityData.aged65plus],
+        backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#FF9F1C", "#2563EB"],
+      },
+    ],
+  };
 
   return (
-    <section className="w-full md:w-1/3 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border flex flex-col">
+    <section className="w-full md:w-1/2 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border flex flex-col">
       <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Area Demographics</h2>
-      <h3 className="text-xl font-bold text-text mb-6 text-left pb-2">{name}</h3>
-      <div className="flex flex-col gap-2">
-        {metrics.map((metric) => (
-          <MetricBar key={metric.label} {...metric} />
-        ))}
+      <div className="flex flex-col gap-2 text-text text-left text-sm mb-4 border-2 border-border rounded-sm bg-slate-700 p-2">
+        <h3 className="text-3xl font-bold text-text mb-6 text-left pb-2">{name}</h3>
+        <div className="flex flex-row justify-between mr-4">
+          <span className="text-xl font-bold">Population: {cityData.Population}</span>
+          <span className="italic text-lg">Average: {averagePopulation}</span>
+        </div>
+        <div className="flex flex-row justify-between mr-4">
+          <span className="text-xl font-bold">Population Density (per km²): {(cityData.Population / cityData.Area).toFixed(1)}</span>
+          <span className="italic text-lg">Average: {averagePopulationDensity}</span>
+        </div>
+        <div className="flex flex-row justify-between mr-4">
+          <span className="text-xl font-bold">GDP (£m): {cityData.GDP.toFixed(1)}</span>
+          <span className="italic text-lg">Average: {averageGDP}</span>
+        </div>
+
+      </div>
+      <div className="w-full h-96">
+        <Pie data={ageDemographicsData} options={chartOptions} />
       </div>
     </section>
   );

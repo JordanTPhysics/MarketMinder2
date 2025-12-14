@@ -6,7 +6,7 @@ import { PiLockKeyFill } from "react-icons/pi";
 import { useSubscription } from "@/utils/use-subscription";
 
 const PricingPage = () => {
-  const { subscription, loading: subscriptionLoading, isFree, isProfessional, isEnterprise, hasPaidPlan } = useSubscription();
+  const { subscription, loading: subscriptionLoading, isFree, isBusiness, isProfessional, isEnterprise, hasPaidPlan } = useSubscription();
 
   const handlePlanClick = async (planName: string, priceId: string) => {
     // Don't allow clicking on Enterprise plan
@@ -38,13 +38,13 @@ const PricingPage = () => {
   const plans = [
     {
       name: "Free",
-      price: "$0",
+      price: "£0",
       priceId: "none",
       period: "",
       description: "Perfect for getting started with MarkitMinder",
       icon: <Star className="w-8 h-8 text-yellow-400" />,
       features: [
-        "30 requests per day",
+        "1 search per day",
         "2 weeks free trial",
         "Email support",
         "Basic analytics",
@@ -54,14 +54,30 @@ const PricingPage = () => {
       color: "border-slate-600"
     },
     {
-      name: "Professional",
-      price: "$99",
-      priceId: "price_1S73djLCNjnWAwZSVFfs1Yhk", // "price_1S73djLCNjnWAwZSVFfs1Yhk",
+      name: "Business",
+      price: "£39",
+      priceId: "price_1SeDqGLCNjnWAwZSUUuSnCGk", // "price_1S73djLCNjnWAwZSVFfs1Yhk",
       period: "per month",
-      description: "For serious traders and investors",
+      description: "For small businesses and acquisitions",
       icon: <Zap className="w-8 h-8 text-blue-400" />,
       features: [
-        "150 requests per day",
+        "3 searches per day",
+        "Local competitor market analysis",
+        "Google search rankings",
+        "Priority email support",
+      ],
+      popular: false,
+      color: "border-slate-600"
+    },
+    {
+      name: "Professional",
+      price: "£79",
+      priceId: "price_1SeDoLLCNjnWAwZSEWhh9mRN",
+      period: "per month",
+      description: "For marketing teams",
+      icon: <Zap className="w-8 h-8 text-blue-400" />,
+      features: [
+        "10 searches per day",
         "Advanced market analysis",
         "Priority email support",
 
@@ -71,20 +87,17 @@ const PricingPage = () => {
     },
     {
       name: "Enterprise",
-      price: "$99",
+      price: "£299",
       period: "per month",
       priceId: "none",
-      description: "For teams and institutions",
+      description: "For unlimited, bespoke usage and long term support",
       icon: <Crown className="w-8 h-8 text-purple-400" />,
       features: [
         "Unlimited requests",
-        "Premium market analysis",
-        "24/7 phone support",
-        "All advanced features",
         "Custom integrations",
         "Dedicated account manager",
         "Custom data exports",
-        "Team collaboration tools"
+        "Full feature suite"
       ],
       popular: false,
       color: "border-purple-500"
@@ -104,6 +117,14 @@ const PricingPage = () => {
                     <Star className="w-6 h-6 text-yellow-400" />
                     <span className="px-4 py-2 bg-gray-500 text-white rounded-full text-sm font-medium">
                       Free Plan
+                    </span>
+                  </>
+                )}
+                {isBusiness && (
+                  <>
+                    <Zap className="w-6 h-6 text-blue-400" />
+                    <span className="px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-medium">
+                      Business Plan
                     </span>
                   </>
                 )}
@@ -180,6 +201,13 @@ const PricingPage = () => {
               {!subscriptionLoading && (
                 <>
                   {plan.name === "Free" && isFree && (
+                    <div className="absolute -top-4 right-4">
+                      <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                        Current Plan
+                      </div>
+                    </div>
+                  )}
+                  {plan.name === "Business" && isBusiness && (
                     <div className="absolute -top-4 right-4">
                       <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
                         Current Plan
@@ -290,7 +318,7 @@ const PricingPage = () => {
                 Can I change plans anytime?
               </h3>
               <p className="text-text/70 text-sm">
-                Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.
+                Yes! Contact us to change to a plan to suit you. We'll handle the transition.
               </p>
             </div>
             <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-border">
@@ -298,7 +326,7 @@ const PricingPage = () => {
                 Is there a free trial?
               </h3>
               <p className="text-text/70 text-sm">
-                Our Free plan is available for 2 weeks.
+                Our Free plan is available for 2 weeks. You can use a basic search until then.
               </p>
             </div>
             <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-border">

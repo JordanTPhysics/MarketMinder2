@@ -11,7 +11,7 @@ import { PaidOnly, SubscriptionGuard } from "@/components/SubscriptionGuard";
 
 export default function AccountPage() {
   const { user, loading: userLoading } = useUser();
-  const { subscription, loading: subscriptionLoading, isFree, isProfessional, isEnterprise, hasPaidPlan } = useSubscription();
+  const { subscription, loading: subscriptionLoading, isFree, isBusiness, isProfessional, isEnterprise, hasPaidPlan } = useSubscription();
   
   const [contactForm, setContactForm] = useState({
     subject: '',
@@ -97,6 +97,12 @@ export default function AccountPage() {
         badge: "bg-gray-500",
         description: "Basic features with limited access"
       };
+    } else if (isBusiness) {
+      return {
+        name: "Business Plan",
+        badge: "bg-blue-500",
+        description: "Enhanced features for small businesses"
+      };
     } else if (isProfessional) {
       return {
         name: "Professional Plan",
@@ -136,7 +142,12 @@ export default function AccountPage() {
           </div>
           <p className="text-text/70 text-sm">{subscriptionInfo.description}</p>
           {hasPaidPlan && (
-            <p className="text-green-500 text-sm mt-2 font-medium">✓ Active Subscription</p>
+            <>
+              <p className="text-green-500 text-sm mt-2 font-medium">✓ Active Subscription</p>
+              <Button asChild variant="outline" className="mt-3 w-full">
+                <Link href="/protected/cancel-subscription">Cancel Subscription</Link>
+              </Button>
+            </>
           )}
         </div>
 

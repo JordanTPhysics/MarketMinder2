@@ -5,7 +5,7 @@ import { useSubscription } from '@/utils/use-subscription';
 
 interface SubscriptionGuardProps {
   children: React.ReactNode;
-  requiredPlan?: 'free' | 'professional' | 'enterprise' | 'paid';
+  requiredPlan?: 'free' | 'professional' | 'enterprise' | 'business' | 'paid';
   fallback?: React.ReactNode;
   loading?: React.ReactNode;
 }
@@ -16,7 +16,7 @@ export function SubscriptionGuard({
   fallback = null,
   loading = <div className="text-text">Loading...</div>
 }: SubscriptionGuardProps) {
-  const { subscription, loading: subscriptionLoading, isProfessional, isEnterprise, hasPaidPlan } = useSubscription();
+  const { subscription, loading: subscriptionLoading, isBusiness, isProfessional, isEnterprise, hasPaidPlan } = useSubscription();
 
   if (subscriptionLoading) {
     return <>{loading}</>;
@@ -31,6 +31,8 @@ export function SubscriptionGuard({
     switch (requiredPlan) {
       case 'free':
         return true; // Everyone has access to free features
+      case 'business':
+        return isBusiness || isProfessional || isEnterprise;
       case 'professional':
         return isProfessional || isEnterprise;
       case 'enterprise':
@@ -69,6 +71,14 @@ export function PaidOnly({ children, fallback = null }: { children: React.ReactN
 export function ProfessionalOnly({ children, fallback = null }: { children: React.ReactNode; fallback?: React.ReactNode }) {
   return (
     <SubscriptionGuard requiredPlan="professional" fallback={fallback}>
+      {children}
+    </SubscriptionGuard>
+  );
+}
+
+export function BusinessOnly({ children, fallback = null }: { children: React.ReactNode; fallback?: React.ReactNode }) {
+  return (
+    <SubscriptionGuard requiredPlan="business" fallback={fallback}>
       {children}
     </SubscriptionGuard>
   );
