@@ -12,7 +12,7 @@ export default function Footer() {
   const size = useMediaQuery('(min-width: 640px)') ? 45 : 25;
   const iconColor = 'rgba(var(--text))';
 
-  return <footer className='relative z-10 bg-gradient-to-t from-slate-800 to-violet-800 border-t-4 border-border text-text text-center pt-2'>
+  return <footer className='relative z-10 bg-gradient-to-b from-background-secondary to-background border-t-2 border-neon-blue text-text text-center pt-2'>
     <div className='flex flex-row justify-evenly'>
       <div className='mx-auto'>
         Built using NextJS and Tailwind CSS

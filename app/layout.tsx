@@ -1,4 +1,4 @@
-import { Work_Sans, Fira_Code, Space_Grotesk } from "next/font/google";
+import { Titillium_Web, Montserrat } from "next/font/google";
 import Head from "next/head";
 import "./globals.css";
 import Footer from "@/components/ui/Footer";
@@ -43,22 +43,18 @@ export const metadata: Metadata = {
   },
 };
 
-const workSans = Work_Sans({
+const titilliumWeb = Titillium_Web({
+  weight: ["400", "600", "700"],
   display: "swap",
   subsets: ["latin"],
-  variable: "--font-work-sans",
+  variable: "--font-titillium-web",
 });
 
-const firaCode = Fira_Code({
+const montserrat = Montserrat({
+  weight: ["400", "600", "700"],
   display: "swap",
   subsets: ["latin"],
-  variable: "--font-fira-code",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  display: "swap",
-  subsets: ["latin"],
-  variable: "--font-space-grotesk",
+  variable: "--font-montserrat",
 });
 
 export default function RootLayout({
@@ -67,7 +63,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${workSans.variable} ${firaCode.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${titilliumWeb.variable} ${montserrat.variable}`} suppressHydrationWarning>
       <Head>
       <Script
           id="schema-software-app"
@@ -99,7 +95,7 @@ export default function RootLayout({
           }}
         />
       </Head>
-      <body className="text-text bg-gradient-to-b from-slate-800 to-violet-800 flex flex-col align-middle items-center text-center">
+      <body className="text-text bg-gradient-to-b from-background to-background-secondary flex flex-col align-middle items-center text-center">
 
         <div className="">
           <RouteProgress />

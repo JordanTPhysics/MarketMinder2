@@ -59,30 +59,30 @@ export default async function AuthButton() {
     <div className="flex items-center justify-center sm:justify-start w-full sm:w-auto">
       <div className="relative group">
         <div
-          className="hover:scale-105 transition-all duration-300 ease-in-out rounded-full bg-foreground text-text border-2 border-border w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center text-xl font-semibold cursor-pointer"
+          className="hover:scale-105 transition-all duration-300 ease-in-out rounded-full bg-foreground text-text border-2 border-neon-purple w-10 h-10 lg:w-12 lg:h-12 flex items-center justify-center text-xl font-semibold cursor-pointer"
           tabIndex={0}
           aria-label="Account menu"
         >
           {user?.email?.charAt(0).toUpperCase()}
         </div>
-        <div 
+        <div
           className="hidden group-hover:flex group-focus-within:flex flex-col gap-3 
            md:absolute md:right-0 md:-top-[0.2rem] lg:absolute lg:right-0 lg:-top-[0.2rem] mt-0 w-64
-            bg-background/50 backdrop-blur-sm border border-border rounded-lg shadow-xl p-4 z-[50]">
+            bg-background/50 backdrop-blur-sm border border-neon-purple rounded-lg shadow-xl p-4 z-[50]">
           <div className="text-left">
             <p className="text-xs uppercase tracking-wide text-text/70">Signed in as</p>
             <Link href="/protected/account" className="text-sm font-semibold text-text break-words hover:underline">{user.email}</Link>
           </div>
           <div className="flex flex-row gap-2">
-            <Button asChild size="sm" className="w-full text-xs sm:text-sm">
+            <Button asChild size="sm" variant="happy" className="w-full text-xs sm:text-sm">
               <Link href="/protected/upgrade">Upgrade</Link>
             </Button>
             <form action={signOutAction} className="w-full">
               <Button
                 type="submit"
                 size="sm"
-                variant="outline"
-                className="w-full text-xs sm:text-sm"
+                variant="destructive"
+                className="w-full text-xs sm:text-sm hover:scale-95 transition duration-300"
               >
                 Sign out
               </Button>
@@ -93,12 +93,13 @@ export default async function AuthButton() {
     </div>
   ) : (
     <div className="flex gap-2 w-full sm:w-auto justify-center sm:justify-start">
-      <Button asChild size="sm" variant={"default"} className="text-xs sm:text-sm px-3 sm:px-6 flex-1 sm:flex-initial">
+      <Button asChild size="sm" variant="happy" className="w-full text-xs sm:text-sm">
         <Link href="/sign-in">Sign in</Link>
       </Button>
-      <Button asChild size="sm" variant={"default"} className="text-xs sm:text-sm px-3 sm:px-6 flex-1 sm:flex-initial">
+      <Button asChild size="sm" variant="happy" className="w-full text-xs sm:text-sm">
         <Link href="/sign-up">Sign up</Link>
       </Button>
     </div>
   );
 }
+

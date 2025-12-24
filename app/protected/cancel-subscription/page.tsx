@@ -189,7 +189,7 @@ export default function CancelSubscriptionPage() {
   if (userLoading || subscriptionLoading) {
     return (
       <div className="min-h-screen w-screen flex flex-col items-center justify-center p-4">
-        <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border max-w-md w-full text-center">
+        <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-neon-purple max-w-md w-full text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-text mx-auto mb-4"></div>
           <p className="text-text">Loading subscription information...</p>
         </div>
@@ -205,17 +205,17 @@ export default function CancelSubscriptionPage() {
   if (isFree) {
     return (
       <div className="min-h-screen w-screen flex flex-col items-center justify-center p-4">
-        <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border max-w-md w-full text-center">
+        <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-neon-purple max-w-md w-full text-center">
           <XCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-text mb-4">No Active Subscription</h1>
           <p className="text-text/80 mb-6">
             You don't have an active paid subscription to cancel.
           </p>
           <div className="flex flex-col gap-3">
-            <Button asChild variant="outline">
+            <Button asChild variant="destructive">
               <Link href="/protected/account">Back to Account</Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="happy">
               <Link href="/protected/upgrade">View Plans</Link>
             </Button>
           </div>
@@ -226,14 +226,14 @@ export default function CancelSubscriptionPage() {
 
   return (
     <div className="min-h-screen w-screen flex flex-col items-center justify-center p-4">
-      <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border max-w-2xl w-full">
+      <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-neon-purple max-w-2xl w-full">
         <h1 className="text-3xl font-bold text-text mb-2 text-center">Cancel Subscription</h1>
         <p className="text-text/80 mb-6 text-center">
           We're sorry to see you go. Please confirm if you'd like to cancel your subscription.
         </p>
 
         {/* Feedback Form Section */}
-        <div className="mb-6 p-6 bg-foreground/30 rounded-lg border border-border">
+        <div className="mb-6 p-6 bg-foreground/30 rounded-lg border border-neon-purple">
           <h2 className="text-xl font-semibold text-text mb-4">Help Us Improve</h2>
           <p className="text-text/80 text-sm mb-4">
             Please let us know which features or aspects of the service you were unsatisfied with. This helps us improve.
@@ -275,7 +275,7 @@ export default function CancelSubscriptionPage() {
               value={feedbackForm.comments}
               onChange={handleCommentsChange}
               rows={4}
-              className="w-full px-3 py-2 bg-background border border-border rounded-md shadow-sm focus:outline-none focus:ring focus:ring-violet-500 text-text resize-vertical"
+              className="w-full px-3 py-2 bg-background border border-neon-purple rounded-md shadow-sm focus:outline-none focus:ring focus:ring-violet-500 text-text resize-vertical"
               placeholder="Please provide more details about why you're canceling..."
               required
             />
@@ -285,8 +285,8 @@ export default function CancelSubscriptionPage() {
           </div>
 
           {!isFormValid() && (
-            <div className="p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-              <p className="text-yellow-400 text-sm">
+            <div className="p-3 bg-neon-yellow/20 border border-neon-yellow/30 rounded-lg">
+              <p className="text-sm">
                 Please select at least one feature and provide comments before canceling.
               </p>
             </div>
@@ -295,11 +295,11 @@ export default function CancelSubscriptionPage() {
 
         {/* Last Payment Date Display */}
         {!loadingPaymentDate && lastPaymentDate && (
-          <div className="mb-6 p-4 bg-blue-500/20 border border-blue-500/30 rounded-lg">
+          <div className="mb-6 p-4 bg-neon-blue/20 border border-neon-blue/30 rounded-lg">
             <div className="flex items-start gap-3">
-              <Calendar className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+              <Calendar className="w-5 h-5 text-neon-blue mt-0.5 flex-shrink-0" />
               <div>
-                <h3 className="text-lg font-semibold text-text mb-2">Your Subscription Details</h3>
+                <h3 className="text-lg font-semibold mb-2">Your Subscription Details</h3>
                 <p className="text-text/80 text-sm mb-1">
                   <strong>Last Payment:</strong> {formatDate(new Date(lastPaymentDate))}
                 </p>
@@ -314,11 +314,11 @@ export default function CancelSubscriptionPage() {
         )}
 
         {/* Warning Section */}
-        <div className="mb-6 p-4 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+        <div className="mb-6 p-4 bg-neon-yellow/20 border border-neon-yellow/30 rounded-lg">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+            <AlertTriangle className="w-5 h-5 text-neon-yellow mt-0.5 flex-shrink-0" />
             <div>
-              <h3 className="text-lg font-semibold text-text mb-2">What happens when you cancel?</h3>
+              <h3 className="text-lg font-semibold text-neon-yellow mb-2">What happens when you cancel?</h3>
               <ul className="text-text/80 text-sm space-y-1 list-disc list-inside">
                 <li>Your subscription cancellation will be processed immediately</li>
                 <li>You will retain access to all paid features for 1 month after your last payment</li>
@@ -334,11 +334,11 @@ export default function CancelSubscriptionPage() {
 
         {/* Success Message */}
         {cancelStatus === 'success' && (
-          <div className="mb-6 p-4 bg-green-500/20 border border-green-500/30 rounded-lg">
+          <div className="mb-6 p-4 bg-neon-green/20 border border-neon-green/30 rounded-lg">
             <div className="flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+              <CheckCircle className="w-5 h-5 text-neon-green flex-shrink-0" />
               <div>
-                <h3 className="text-lg font-semibold text-green-400 mb-1">Subscription Canceled</h3>
+                <h3 className="text-lg font-semibold text-neon-green mb-1">Subscription Canceled</h3>
                 <p className="text-text/80 text-sm">
                   Your subscription cancellation has been processed successfully.
                   {getAccessEndDate() && (
@@ -353,11 +353,11 @@ export default function CancelSubscriptionPage() {
 
         {/* Error Message */}
         {cancelStatus === 'error' && (
-          <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+          <div className="mb-6 p-4 bg-neon-red/20 border border-neon-red/30 rounded-lg">
             <div className="flex items-center gap-3">
-              <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+              <XCircle className="w-5 h-5 text-neon-red flex-shrink-0" />
               <div>
-                <h3 className="text-lg font-semibold text-red-400 mb-1">Error</h3>
+                <h3 className="text-lg font-semibold text-neon-red mb-1">Error</h3>
                 <p className="text-text/80 text-sm">
                   {errorMessage || 'Failed to cancel subscription. Please try again or contact support.'}
                 </p>
@@ -386,7 +386,7 @@ export default function CancelSubscriptionPage() {
 
           <Button
             asChild
-            variant="outline"
+            variant="neutral"
             disabled={isCanceling || cancelStatus === 'success'}
             className="w-full"
           >
@@ -395,9 +395,9 @@ export default function CancelSubscriptionPage() {
         </div>
 
         {/* Support Information */}
-        <div className="mt-6 pt-6 border-t border-border">
+        <div className="mt-6 pt-6 border-t border-neon-purple">
           <p className="text-text/70 text-sm text-center">
-            Need help? <Link href="/protected/account" className="text-blue-400 hover:text-blue-300 underline">Contact support</Link>
+            Need help? <Link href="/protected/account" className="text-neon-blue hover:text-neon-blue/80 underline">Contact support</Link>
           </p>
         </div>
       </div>

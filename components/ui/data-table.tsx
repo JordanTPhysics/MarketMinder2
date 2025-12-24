@@ -73,15 +73,15 @@ export function DataTable<TData, TValue>({
     })
 
     return <div >
-        <div className="rounded-md border-2 border-border bg-foreground w-inherit">
+        <div className="rounded-md border-2 border-neon-purple bg-foreground w-inherit">
             <Table>
-                <TableHeader className="border-border text-text">
+                <TableHeader className="border-neon-purple text-text">
                     {table.getHeaderGroups().map((headerGroup) => (
                         <TableRow key={headerGroup.id}>
                             {headerGroup.headers.map((header) => {
                                 return (
                                     <TableHead
-                                        className="border-border border-r-2 text-text"
+                                        className="border-neon-purple border-r-2 text-text"
                                         key={header.id} >
                                         {header.isPlaceholder
                                             ? null
@@ -103,13 +103,13 @@ export function DataTable<TData, TValue>({
                                 : "";
                             return (
                             <TableRow
-                                className={`hover:bg-background border-border border-r-2 text-text ${rowClassName}`}
+                                className={`hover:bg-background border-neon-purple border-r-2 text-text ${rowClassName}`}
                                 key={row.id}
                                 data-state={row.getIsSelected() && "selected"}
                             >
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell key={cell.id}
-                                        className="max-w-32 overflow-hidden border-border border-r-2">
+                                        className="max-w-32 overflow-hidden border-neon-purple border-r-2">
                                         {flexRender(
                                             cell.column.columnDef.cell,
                                             cell.getContext())}
@@ -120,7 +120,7 @@ export function DataTable<TData, TValue>({
                         })
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={columns.length} className=" text-center border-border border-r-2">
+                            <TableCell colSpan={columns.length} className=" text-center border-neon-purple border-r-2">
                                 No results.
                             </TableCell>
                         </TableRow>

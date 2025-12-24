@@ -237,29 +237,16 @@ const Dash = () => {
     a.download = 'places.csv';
     a.click();
   }
-  
-
-  const infoWindowContent = (place: Place) => {
-    return (
-      <div className="p-4">
-        <h2 className="text-lg font-semibold">{place.PlaceName}</h2>
-        <p>{place.Address}</p>
-        <p>Rating: {place.Rating}</p>
-        <p>Phone: {place.Phone}</p>
-        <a href={place.Url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Website</a>
-      </div>
-    );
-  }
 
   return <>
-    <div className="text-text bg-gradient-to-b from-slate-800 to-violet-800 h-full flex flex-col align-middle items-center text-center">
+    <div className="text-text font-serif bg-gradient-to-b from-background to-background-secondary h-full flex flex-col align-middle items-center text-center">
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
-        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Search</h2>
+        <h1 className="lg:text-4xl text-2xl font-semibold italic text-text text-center w-full">Search</h1>
         <div className="flex flex-row items-center justify-evenly w-full p-4">
           <form onSubmit={handleFormSubmit}>
             <div className="mb-4">
               <label htmlFor="name" className="block text-lg font-semibold text-text text-left">Business Name:</label>
-              <input type="name" id="name" name="name" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
+              <input type="name" id="name" name="name" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border border-neon-blue rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
             </div>
             <div className="mb-4">
               <label htmlFor="type" className="block text-lg font-semibold text-text text-left">Business Type:</label>
@@ -286,8 +273,8 @@ const Dash = () => {
               />
             </div>
 
-            <button onClick={handleUseLocationClick} className="px-6 py-3 mx-2 bg-foreground rounded-md border-2 border-border text-lg font-semibold  hover:bg-slate-700 hover:scale-95 transition duration-300">Use Location</button>
-            <button type="submit" className="px-6 py-3 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300">Search</button>
+            <button onClick={handleUseLocationClick} className="px-6 py-3 mx-2 bg-foreground rounded-md border-2 border-neon-green text-lg font-semibold  hover:bg-slate-700 hover:scale-95 transition duration-300">Use Location</button>
+            <button type="submit" className="px-6 py-3 bg-foreground mx-auto border-2 border-neon-blue rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300">Search</button>
           </form>
           <div>
             {API_KEY == null ? <span className="text-danger">Google Maps API Key not Available</span> :
@@ -337,7 +324,7 @@ const Dash = () => {
           </div>
         )}
         {places.length > 0 ? <DataTable columns={columns} data={places} /> : <div className="text-text text-2xl font-semibold"></div>}
-        {places.length > 0 ? <button className="px-6 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300" onClick={downloadCsv}>Download CSV</button> : <div></div>}
+        {places.length > 0 ? <button className="px-6 bg-foreground mx-auto border-2 border-neon-purple rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300" onClick={downloadCsv}>Download CSV</button> : <div></div>}
 
       </section>
     </div>

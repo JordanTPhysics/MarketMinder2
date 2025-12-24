@@ -60,7 +60,7 @@ const GoogleSearchResult = ({ placeName, location, type }: { placeName: string, 
         <div className="w-full flex flex-col gap-4 relative z-0">
             <span className="text-text text-2xl text-left font-semibold">Check Google Search Rankings for {placeName} in {location} (Beta)</span>
             {results.length > 0 &&
-                <div className="flex flex-col text-xl font-semibold items-center justify-center border-2 border-border bg-slate-700 rounded-md p-2 w-1/3 mx-auto">
+                <div className="flex flex-col text-xl font-semibold items-center justify-center border-2 border-neon-purple bg-slate-700 rounded-md p-2 w-1/3 mx-auto">
                     <span>Google Search Ranking: {ranking}</span>
                     <br/>
                     {ranking === 0 ? <span>Your business did not appear on the first page of Google Search</span> : null}
@@ -69,7 +69,7 @@ const GoogleSearchResult = ({ placeName, location, type }: { placeName: string, 
 
             <Button
                 variant="outline"
-                className="px-6 mx-auto bg-foreground border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300"
+                className="px-6 mx-auto bg-foreground border-2 border-neon-green rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300"
                 onClick={() => fetchGoogleSearch(location, type)}>
                 {results.length > 0 ? 'Refresh' : 'Fetch'}
             </Button>
@@ -84,7 +84,7 @@ const GoogleSearchResult = ({ placeName, location, type }: { placeName: string, 
                             const matchesTitle = row.title.toLowerCase().includes(normalizedPlaceName);
                             const matchesSnippet = row.snippet.toLowerCase().includes(normalizedPlaceName);
                             return (matchesTitle || matchesSnippet) 
-                                ? "bg-amber-500/30 hover:bg-amber-500/40 border-amber-500" 
+                                ? "bg-neon-orange/30 hover:bg-neon-orange/40 border-neon-orange" 
                                 : "";
                         }}
                     />

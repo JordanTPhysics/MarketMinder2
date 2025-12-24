@@ -55,16 +55,6 @@ const BusinessIntelligence: React.FC<BusinessIntelligenceProps> = ({
     )
     : null;
 
-  // Calculate average business score as percentage of max
-  const averageBusinessScorePercentage = maxBusinessScore > 0
-    ? (averageBusinessScore / maxBusinessScore) * 100
-    : 0;
-
-  // Calculate user's business score as percentage of max
-  const userBusinessScorePercentage = userBusiness && maxBusinessScore > 0
-    ? ((userBusiness.BusinessScore || 0) / maxBusinessScore) * 100
-    : 0;
-
   // Prepare chart data: sort all places by business score (highest to lowest)
   const sortedPlaces = [...places].sort((a, b) => (b.BusinessScore || 0) - (a.BusinessScore || 0));
   const chartLabels = sortedPlaces.map((place, index) => {
@@ -84,16 +74,16 @@ const BusinessIntelligence: React.FC<BusinessIntelligenceProps> = ({
   // Create background colors array - highlight user's business and average
   const backgroundColors = sortedPlaces.map((place, index) => {
     if (userBusiness && place.PlaceID === userBusiness.PlaceID) {
-      return 'rgba(251, 191, 36, 0.8)'; // Gold/amber for user's business
+      return 'rgba(255, 154, 0, 0.9)'; // Gold/amber for user's business
     }
-    return 'rgba(139, 92, 246, 0.6)'; // Violet for others
+    return 'rgba(140, 0, 255, 0.9)'; // Violet for others
   });
 
   const borderColors = sortedPlaces.map((place, index) => {
     if (userBusiness && place.PlaceID === userBusiness.PlaceID) {
-      return 'rgba(251, 191, 36, 1)'; // Gold/amber border
+      return 'rgba(255, 154, 0, 1)'; // Gold/amber border
     }
-    return 'rgba(139, 92, 246, 1)'; // Violet border
+    return 'rgba(140, 0, 255, 1)'; // Violet border
   });
 
   const chartData = {
@@ -103,8 +93,8 @@ const BusinessIntelligence: React.FC<BusinessIntelligenceProps> = ({
         label: 'Average',
         data: chartLabels.map(() => averageBusinessScore),
         type: 'line' as const,
-        borderColor: "rgba(34, 197, 94, 1)", // Green color
-        backgroundColor: "rgba(34, 197, 94, 0.1)", // Light green fill
+        borderColor: "rgba(57, 255, 20, 1)", // Green color
+        backgroundColor: "rgba(57, 255, 20, 0.1)", // Light green fill
         borderWidth: 2,
         borderDash: [5, 5], // Dashed line for better visibility
         fill: false,
@@ -181,9 +171,9 @@ const BusinessIntelligence: React.FC<BusinessIntelligenceProps> = ({
   };
 
   return (
-    <section className="w-full md:w-1/2 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border flex flex-col">
+    <section className="w-full md:w-1/2 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-neon-purple flex flex-col">
       <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Business Intelligence</h2>
-      <div className="flex flex-col gap-2 text-text text-left text-sm mb-4 border-2 border-border rounded-sm bg-slate-700 p-2">
+      <div className="flex flex-col gap-2 text-text text-left text-sm mb-4 border-2 border-neon-blue rounded-sm bg-foreground-secondary p-2">
         <h3 className="text-xl font-bold text-text mb-6 text-left pb-2">{userBusiness ? `${userBusiness.PlaceName} (${userBusinessName})` : "All Businesses"}</h3>
         <div className="flex flex-row justify-between mr-4">
           <span className="text-xl font-bold">Review Score: {userBusiness?.Rating}</span>
@@ -205,15 +195,15 @@ const BusinessIntelligence: React.FC<BusinessIntelligenceProps> = ({
         </div>
       )}
       <div className="flex items-center">
-        <span className="inline-block w-4 h-4 border-2 border-green-500 rounded mr-2"></span>
+        <span className="inline-block w-4 h-4 border-2 border-neon-green rounded mr-2"></span>
         Average: {averageBusinessScore?.toFixed(1)}
       </div>
 
       {/* Show note if business name provided but no match found */}
       {userBusinessName && !userBusiness && (
-        <div className="mt-6 p-4 bg-yellow-100 border border-yellow-400 rounded-lg">
-          <div className="text-amber-800 font-semibold mb-2">Business Not Found</div>
-          <div className="text-amber-700 text-sm">
+        <div className="mt-6 p-4 bg-foreground-secondary border-2 border-neon-orange rounded-lg">
+          <div className="text-neon-orange font-semibold mb-2">Business Not Found</div>
+          <div className="text-text text-sm">
             "{userBusinessName}" was not found in the search results. This could mean:
             <ul className="list-disc list-inside mt-2 ml-4">
               <li>The business name doesn't match exactly</li>

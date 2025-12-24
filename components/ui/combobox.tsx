@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
-
+import { cn } from "@/lib/utils"
 
 import {
   Command,
@@ -25,9 +25,10 @@ type FormDropdownProps = {
     values: string[];
     onChange: (value: string) => void;
     defaultValue?: string;
+    className?: string;
 }
 
-export function ComboboxDropdown({ type, keys, values, onChange, defaultValue }: FormDropdownProps) {
+export function ComboboxDropdown({ type, keys, values, onChange, defaultValue, className }: FormDropdownProps) {
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState(defaultValue || "")
   const [inputValue, setInputValue] = React.useState(defaultValue || "")
@@ -51,14 +52,14 @@ export function ComboboxDropdown({ type, keys, values, onChange, defaultValue }:
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger 
-      className="bg-foreground-secondary border-border border-2 rounded-md text-text w-full h-full p-2"
+      className={cn(className, "p-2 border-2 rounded-md bg-foreground ")}
       asChild>
         <button aria-expanded={open} type="button" className="w-full h-full flex items-center justify-between" onClick={() => setOpen(!open)}>
           <span className="text">{value}</span>
           <ChevronsUpDown className="ml-20 shrink-0 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="bg-foreground-secondary border-border rounded-sm">
+      <PopoverContent className={cn(className, "bg-foreground-secondary rounded-sm focus:outline-none focus:ring focus:ring-slate-500")}>
         <Command>
           <CommandInput 
             placeholder={`Select a ${type}`}

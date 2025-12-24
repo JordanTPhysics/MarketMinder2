@@ -105,13 +105,13 @@ const PricingPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-800 to-violet-800 py-12 px-4">
-      <div className="w-full">
+    <div className="w-screen min-h-screen bg-gradient-to-b from-background to-background-secondary py-12 px-4">
+      <div className="w-2/3 mx-auto">
       {!subscriptionLoading && (
           <div className="flex flex-col items-center justify-center mb-12">
-            <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-6 border-2 border-border max-w-md">
+            <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-6 border-2 border-neon-purple w-2/3 min-w-1/2">
               <h2 className="text-lg font-semibold text-text mb-3">Your Current Plan</h2>
-              <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="flex flex-row items-center justify-center gap-3 mb-3">
                 {isFree && (
                   <>
                     <Star className="w-6 h-6 text-yellow-400" />
@@ -287,7 +287,7 @@ const PricingPage = () => {
 
         {/* Additional Info Section */}
         <div className="mt-16 text-center">
-          <div className="bg-background/30 backdrop-blur-sm rounded-2xl p-8 w-full border-2 border-border">
+          <div className="bg-background/30 backdrop-blur-sm rounded-2xl p-8 w-full border-2 border-neon-purple">
             <h2 className="text-2xl font-bold text-text mb-4 font-serif">
               All Plans Include
             </h2>
@@ -313,7 +313,7 @@ const PricingPage = () => {
             Frequently Asked Questions
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-border">
+            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-neon-purple">
               <h3 className="text-lg font-semibold text-text mb-3">
                 Can I change plans anytime?
               </h3>
@@ -321,7 +321,7 @@ const PricingPage = () => {
                 Yes! Contact us to change to a plan to suit you. We'll handle the transition.
               </p>
             </div>
-            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-border">
+            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-neon-purple">
               <h3 className="text-lg font-semibold text-text mb-3">
                 Is there a free trial?
               </h3>
@@ -329,7 +329,7 @@ const PricingPage = () => {
                 Our Free plan is available for 2 weeks. You can use a basic search until then.
               </p>
             </div>
-            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-border">
+            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-neon-purple">
               <h3 className="text-lg font-semibold text-text mb-3">
                 What payment methods do you accept?
               </h3>
@@ -337,7 +337,7 @@ const PricingPage = () => {
                 Payments are processed through Stripe.
               </p>
             </div>
-            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-border">
+            <div className="bg-background/30 backdrop-blur-sm rounded-xl p-6 border-2 border-neon-purple">
               <h3 className="text-lg font-semibold text-text mb-3">
                 Do you offer refunds?
               </h3>

@@ -78,7 +78,7 @@ export function RequestStatusDisplay({
             </div>
           </div>
         ) : error.type === 'auth_error' ? (
-          <div className="bg-yellow-50 border border-border rounded-lg p-4">
+          <div className="bg-yellow-50 border border-neon-orange rounded-lg p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h3 className="text-foreground-secondary font-semibold text-sm mb-1">
@@ -99,13 +99,13 @@ export function RequestStatusDisplay({
             </div>
           </div>
         ) : (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="bg-orange-50 border border-neon-orange rounded-lg p-4">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h3 className="text-orange-800 font-semibold text-sm mb-1">
+                <h3 className="text-text font-semibold text-sm mb-1">
                   Request Error
                 </h3>
-                <p className="text-orange-600 text-sm">
+                <p className="text-text text-sm">
                   {error.message}
                 </p>
               </div>
@@ -113,7 +113,7 @@ export function RequestStatusDisplay({
                 variant="ghost"
                 size="sm"
                 onClick={onClearError}
-                className="text-orange-600 hover:text-orange-800"
+                className="text-text hover:text-text-secondary"
               >
                 ×
               </Button>

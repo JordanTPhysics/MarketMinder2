@@ -15,13 +15,13 @@ export default async function Home() {
       <section className="flex flex-col items-center justify-evenly p-2 w-screen bg-background-secondary">
         <h1 className="lg:text-6xl text-3xl font-bold text-text text-center font-display">Local Business Market Intelligence</h1>
         <div className='m-4 flex flex-row justify-center gap-4'>
-          <Button asChild size="lg" variant={"outline"}>
+          <Button asChild size="lg" variant={"happy"}>
             <Link href="/demo">Demo</Link>
           </Button>
-          <Button asChild size="lg" variant={"outline"}>
+          <Button asChild size="lg" variant={"neutral"}>
             <Link href="/sign-up">Sign Up</Link>
           </Button>
-          <Button asChild size="lg" variant={"outline"}>
+          <Button asChild size="lg" variant={"secondary"}>
             <Link href="/sign-in">Sign In</Link>
           </Button>
         </div>

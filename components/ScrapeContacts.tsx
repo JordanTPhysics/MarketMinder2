@@ -56,7 +56,7 @@ const ScrapeContacts = ({ places, country, city, type }: { places: Place[], coun
                 <Button
                     variant="outline"
                     onClick={() => scrapeContacts()}
-                    className="px-6 bg-foreground border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300">
+                    className="px-6 bg-foreground border-2 border-neon-green rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300">
                     Scrape
                 </Button>
 

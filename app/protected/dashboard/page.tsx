@@ -8,7 +8,7 @@ const InteractiveMap = dynamic(() => import('../../../components/InteractiveMap'
   ssr: false,
 });
 
-import { columns, Place, IsCloseMatch, FindCloseMatch, calculateUptime, CityData, loadUKAgeDemographics } from "../../../lib/places";
+import { columns, Place, IsCloseMatch, calculateUptime } from "../../../lib/places";
 import BusinessIntelligence from "../../../components/BusinessIntelligence";
 import AreaDemographics from "../../../components/AreaDemographics";
 import GoogleSearchResult from "../../../components/GoogleSearchRanking";
@@ -29,13 +29,12 @@ import { useUser } from "../../../utils/use-user";
 import { useRequestStatus } from "../../../utils/request-status";
 import { RequestStatusDisplay } from "../../../components/RequestStatusDisplay";
 import { apiClient } from "../../../utils/enhanced-api-client";
-import { PaidOnly } from "../../../components/SubscriptionGuard";
+import { PaidOnly, BusinessOnly, ProfessionalOnly } from "../../../components/SubscriptionGuard";
 import Link from "next/link";
 import { computeLocalDensityScores, LatLng } from "@/lib/spatialDensity";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
 import { useSubscription } from "../../../utils/use-subscription";
-import { getDashboardRoute } from "../../../utils/dashboard-routing";
 import { useRouter } from "next/navigation";
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -62,7 +61,6 @@ const getPlacesFromData = (data: any, name: string) => {
       openHours,
     );
 
-    // Calculate uptime percentage
     place.Uptime = calculateUptime(openHours);
 
     places.push(place);
@@ -81,20 +79,6 @@ const getPlacesFromData = (data: any, name: string) => {
 const Dash = () => {
   const { user, loading: userLoading, error: userError } = useUser();
   const { status, error, loading: statusLoading, refreshStatus, setError } = useRequestStatus(user?.id);
-  const { subscription, loading: subscriptionLoading } = useSubscription();
-  const router = useRouter();
-
-  // Redirect to appropriate dashboard based on subscription
-  // useEffect(() => {
-  //   if (!subscriptionLoading && subscription) {
-  //     const correctRoute = getDashboardRoute(subscription);
-  //     // Only redirect if we're not already on the correct route
-  //     if (correctRoute !== '/protected/dashboard') {
-  //       router.replace(correctRoute);
-  //     }
-  //   }
-  // }, [subscription, subscriptionLoading, router]);
-
 
   const [cities, setCities] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
@@ -396,16 +380,14 @@ const Dash = () => {
   }
 
   return <>
-    <div className="text-text bg-gradient-to-b from-slate-800 to-violet-800 h-full flex flex-col align-middle items-center text-center">
+    <div className="text-text font-serif bg-gradient-to-b from-background to-background-secondary h-full flex flex-col align-middle items-center text-center">
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
-        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Search</h2>
-
+        <h1 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 border-neon-purple w-full">Search</h1>
 
         <div className="flex lg:flex-row md:flex-row flex-col items-center justify-evenly w-full p-4 relative">
-          {/* Limit exceeded overlay */}
           {error?.type === 'limit_exceeded' && (
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
-              <div className="bg-background/90 backdrop-blur-sm rounded-xl p-8 border border-border max-w-2xl mx-4">
+              <div className="bg-background/90 backdrop-blur-sm rounded-xl p-8 border border-neon-red max-w-2xl mx-4">
                 <RequestStatusDisplay
                   status={status}
                   error={error}
@@ -417,49 +399,57 @@ const Dash = () => {
             </div>
           )}
 
-          <form onSubmit={handleFormSubmit} className={error?.type === 'limit_exceeded' ? 'pointer-events-none opacity-50' : ''}>
+          <form onSubmit={handleFormSubmit} className={error?.type === 'limit_exceeded' ? 'pointer-events-none opacity-50 px-10' : ''}>
 
-            <div className="mb-4">
+            <div className="mb-4 w-3/4">
               <label htmlFor="type" className="block text-lg font-semibold text-text text-left">Business Type:</label>
-              <input placeholder="restaurant, indian restaurant" type="type" id="type" name="type" onChange={handleFormChange} required className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
+              <input
+                placeholder="restaurant, indian restaurant"
+                type="type"
+                id="type"
+                name="type"
+                onChange={handleFormChange}
+                required
+                className="mt-1 block w-full px-3 py-2 bg-foreground border-2 border-neon-purple rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500 visited:bac" />
             </div>
 
-            <div className="mb-4">
+            <div className="mb-4 w-2/3">
               <label htmlFor="country" className="block text-lg font-semibold text-text text-left">Country:</label>
               <ComboboxDropdown
                 type="country"
                 values={countries}
                 keys={countries}
+                className="bg-foreground border-neon-pink border-2 rounded-md"
                 defaultValue="United Kingdom"
                 onChange={(value: string) => handleFormChange({ target: { name: "country", value } } as React.ChangeEvent<HTMLInputElement>)}
               />
             </div>
 
-            <div className="mb-4">
+            <div className="mb-4 w-2/3">
               <label htmlFor="city" className="block text-lg font-semibold text-text text-left">City:</label>
               <ComboboxDropdown
                 type="city"
                 values={cities}
                 keys={cities}
+                className="bg-foreground border-neon-pink border-2 rounded-md"
                 onChange={(value: string) => handleFormChange({ target: { name: "city", value } } as React.ChangeEvent<HTMLInputElement>)}
               />
             </div>
 
-            <div className="mb-4">
+            <div className="mb-4 w-3/4">
               <label htmlFor="postcode" className="block text-lg font-semibold text-text text-left">Postcode <span className="italic text-sm">(Optional)</span></label>
-              <input type="postcode" id="postcode" name="postcode" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
+              <input type="postcode" id="postcode" name="postcode" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border-2 border-neon-purple rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
             </div>
 
-            <div className="mb-4">
+            <div className="mb-4 w-3/4">
               <label htmlFor="name" className="block text-lg font-semibold text-text text-left">Business Name <span className="italic text-sm">(Optional)</span></label>
-              <input placeholder="Nawaabs" type="name" id="name" name="name" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
+              <input placeholder="Nawaabs" type="name" id="name" name="name" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border-2 border-neon-purple rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
             </div>
 
-            <PaidOnly
-              fallback={<div>Paid users can select additional data fields.</div>}
+            <ProfessionalOnly
+              fallback={<div className="w-3/4">MarkitMinder Professional users can select additional data fields.</div>}
             >
-
-              <div className="mb-4 p-3 bg-foreground/50 rounded-md border border-border">
+              <div className="mb-4 w-2/3 p-3 bg-foreground/50 rounded-md border-2 border-neon-purple">
                 <label className="block text-sm font-semibold text-text text-left mb-2">Premium Data Fields:</label>
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center space-x-2 py-2">
@@ -483,15 +473,15 @@ const Dash = () => {
                     <label htmlFor="openHours" className="text-sm text-text cursor-pointer">Open Hours</label>
                   </div>
                   <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="phone"
-                        checked={columnVisibility.phone}
-                        onCheckedChange={(checked) =>
-                          setColumnVisibility(prev => ({ ...prev, phone: checked === true }))
-                        }
-                      />
-                      <label htmlFor="phone" className="text-sm text-text cursor-pointer">Phone Number</label>
-                    </div>
+                    <Checkbox
+                      id="phone"
+                      checked={columnVisibility.phone}
+                      onCheckedChange={(checked) =>
+                        setColumnVisibility(prev => ({ ...prev, phone: checked === true }))
+                      }
+                    />
+                    <label htmlFor="phone" className="text-sm text-text cursor-pointer">Phone Number</label>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="meanDistance"
@@ -514,10 +504,11 @@ const Dash = () => {
                   </div>
                 </div>
               </div>
-            </PaidOnly>
-
-            <Button variant="outline" disabled={!formData.type} onClick={handleUseLocationClick} className="px-6 py-3 mx-2 bg-foreground rounded-md border-2 border-border text-lg font-semibold  hover:bg-slate-700 hover:scale-95 transition duration-300">Use Location</Button>
-            <Button variant="outline" type="submit" disabled={!formData.type || !formData.city || !formData.country} className="px-6 py-3 bg-foreground mx-auto border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300">Search</Button>
+            </ProfessionalOnly>
+            <div className="flex flex-row justify-center w-3/4 gap-4">
+              <Button variant="neutral" disabled={!formData.type} onClick={handleUseLocationClick}>Use Location</Button>
+              <Button variant="happy" type="submit" disabled={!formData.type || !formData.city || !formData.country}>Search</Button>
+            </div>
           </form>
           <div>
             {API_KEY == null ? <span className="text-danger">Google Maps API Key not Available</span> :
@@ -590,23 +581,20 @@ const Dash = () => {
         </div>
       </section>
       <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
-        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Results</h2>
-        <span className="text-text text-lg">
+        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 border-neon-pink w-full pl-4">Results</h2>
+        {places.length > 0 ? <span className="text-neon-orange text-lg font-semibold">
           Data may not persist if you refresh the page, download csv to make sure you keep any results you need.
-        </span>
+        </span> : <span className="text-text text-lg font-semibold">Search to view results</span>}
         {places.length > 0 ? (
           <div className="flex gap-4 mt-4">
             <Dialog open={isTableModalOpen} onOpenChange={setIsTableModalOpen}>
               <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="px-6 bg-foreground border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300"
-                >
+                <Button variant="neutral">
                   View Table
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-screen max-h-[90vh] flex flex-col p-0">
-                <DialogHeader className="sticky top-0 z-10 bg-background border-b border-border px-6 py-4">
+                <DialogHeader className="sticky top-0 z-10 bg-background border-b border-neon-red px-6 py-4">
                   <DialogTitle className="text-2xl font-bold text-text">Search Results</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto px-6 pb-6">
@@ -617,29 +605,24 @@ const Dash = () => {
                 </div>
               </DialogContent>
             </Dialog>
-            <Button
-              variant="outline"
-              className="px-6 bg-foreground border-2 border-border rounded-md text-lg font-semibold hover:bg-slate-700 hover:scale-95 transition duration-300"
-              onClick={() => downloadCsv(formData.type.trim() + formData.city.trim() + '.csv')}
-              disabled={places.length === 0}
-            >
+            <Button variant="secondary" disabled={places.length === 0} onClick={() => downloadCsv(formData.type.trim() + formData.city.trim() + '.csv')}>
               Download CSV
             </Button>
           </div>
         ) : <div className="text-text text-2xl font-semibold"></div>}
-        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Analytics</h2>
+        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 border-neon-yellow w-full pl-4">Analytics</h2>
 
         {places.length > 0 ? (
           <PaidOnly
             fallback={
-              <div className="w-full max-w-2xl mx-auto mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border">
+              <div className="w-full max-w-2xl mx-auto mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-neon-red">
                 <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Business Viability Rating</h2>
                 <div className="text-center py-8">
                   <h3 className="text-xl font-semibold text-text mb-4">Upgrade to Access Business Analytics</h3>
                   <p className="text-text/70 mb-6">
                     Get detailed business viability insights with a paid plan.
                   </p>
-                  <Button asChild size="lg" className="bg-violet-600 hover:bg-violet-700">
+                  <Button asChild size="lg" variant="happy">
                     <Link href="/protected/upgrade">Upgrade Now</Link>
                   </Button>
                 </div>
@@ -675,19 +658,33 @@ const Dash = () => {
         ) : null}
 
       </section>
-      <section className="flex flex-col items-center justify-center min-h-96 w-screen p-2 mb-4 relative z-0">
-        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Google Search Ranking</h2>
-        <div className="w-full">
-          {places.length > 0 && <GoogleSearchResult placeName={formData.name.trim() || ''} location={formData.city.trim() || ''} type={formData.type.trim()} />}
-        </div>
-      </section>
+      <BusinessOnly
+        fallback={
+          <div>
+            <h2>Upgrade to Access Google Search Ranking</h2>
+            <Button asChild size="lg" variant="happy">
+              <Link href="/protected/upgrade">Upgrade Now</Link>
+            </Button>
+          </div>
+        }
+      >
+        <section className="flex flex-col items-center justify-center min-h-96 w-screen p-2 mb-4 relative z-0">
+          <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 border-neon-red w-full pl-4">Google Search Ranking</h2>
+          <div className="w-full">
+            {places.length > 0 && <GoogleSearchResult placeName={formData.name.trim() || ''} location={formData.city.trim() || ''} type={formData.type.trim()} />}
+          </div>
+        </section>
+      </BusinessOnly>
 
-      <section className="flex flex-col items-center justify-center min-h-96 w-screen p-2 mb-4 relative z-0">
-        <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 w-full pl-4">Scrape Contacts</h2>
-        <div className="w-full">
-          {places.length > 0 && <ScrapeContacts places={places} country={formData.country.trim()} city={formData.city.trim()} type={formData.type.trim()} />}
-        </div>
-      </section>
+      <ProfessionalOnly>
+        <section className="flex flex-col items-center justify-center min-h-96 w-screen p-2 mb-4 relative z-0">
+          <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 border-neon-green w-full pl-4">Scrape Contacts</h2>
+          <div className="w-full">
+            {places.length > 0 && <ScrapeContacts places={places} country={formData.country.trim()} city={formData.city.trim()} type={formData.type.trim()} />}
+          </div>
+        </section>
+      </ProfessionalOnly>
+      <br/>
     </div>
   </>;
 };

@@ -10,7 +10,8 @@ import Link from 'next/link';
 const PLAN_NAMES: Record<number, string> = {
   1: "Free",
   2: "Professional", 
-  3: "Enterprise"
+  3: "Enterprise",
+  7: "Business"
 };
 
 export default function PaymentSuccessPage() {
@@ -97,7 +98,7 @@ export default function PaymentSuccessPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-800 to-violet-800 flex items-center justify-center">
+      <div className="min-h-screen bg-foreground flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-text animate-spin mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-text mb-2">Processing Payment...</h2>
@@ -108,11 +109,11 @@ export default function PaymentSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-800 to-violet-800 py-12 px-4">
+    <div className="min-h-screen bg-foreground py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Debug info - remove in production */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 rounded text-sm">
+          <div className="mb-4 p-4 bg-foreground-secondary border border-neon-orange rounded text-sm">
             <strong>Debug Info:</strong><br/>
             Status: {status}<br/>
             Subscription ID: {subscriptionId}<br/>
@@ -122,7 +123,7 @@ export default function PaymentSuccessPage() {
         {status === "active" && subscriptionId ? (
           <div className="text-center">
             {/* Success State */}
-            <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border">
+            <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-neon-purple">
               <CheckCircle className="w-20 h-20 text-success mx-auto mb-6" />
               <h1 className="text-4xl font-bold text-text mb-4 font-serif">
                 Payment Successful!
@@ -132,7 +133,7 @@ export default function PaymentSuccessPage() {
               </p>
               
               {/* Plan Details */}
-              <div className="bg-foreground/20 rounded-xl p-6 mb-8">
+              <div className="bg-foreground-secondary rounded-xl p-6 mb-8">
                 <h3 className="text-lg font-semibold text-text mb-4">
                   Your New Plan: {PLAN_NAMES[subscriptionId]}
                 </h3>
@@ -173,7 +174,7 @@ export default function PaymentSuccessPage() {
             </div>
 
             {/* Additional Info */}
-            <div className="mt-8 bg-background/30 backdrop-blur-sm rounded-xl p-6 border border-border">
+            <div className="mt-8 bg-foreground-secondary backdrop-blur-sm rounded-xl p-6 border border-neon-purple">
               <h3 className="text-lg font-semibold text-text mb-3">
                 What's Next?
               </h3>
@@ -187,7 +188,7 @@ export default function PaymentSuccessPage() {
           </div>
         ) : status === "pending" ? (
           <div className="text-center">
-            <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border">
+            <div className="bg-foreground-secondary backdrop-blur-sm rounded-2xl p-8 border border-neon-purple">
               <Loader2 className="w-20 h-20 text-text animate-spin mx-auto mb-6" />
               <h1 className="text-4xl font-bold text-text mb-4 font-serif">
                 Processing Your Payment
@@ -202,7 +203,7 @@ export default function PaymentSuccessPage() {
           </div>
         ) : status === "not-logged-in" ? (
           <div className="text-center">
-            <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border">
+            <div className="bg-foreground-secondary backdrop-blur-sm rounded-2xl p-8 border border-neon-purple">
               <XCircle className="w-20 h-20 text-danger mx-auto mb-6" />
               <h1 className="text-4xl font-bold text-text mb-4 font-serif">
                 Please Sign In
@@ -221,7 +222,7 @@ export default function PaymentSuccessPage() {
         ) : (
           <div className="text-center">
             {/* Error State */}
-            <div className="bg-background/50 backdrop-blur-sm rounded-2xl p-8 border border-border">
+            <div className="bg-foreground-secondary backdrop-blur-sm rounded-2xl p-8 border border-neon-orange">
               <XCircle className="w-20 h-20 text-danger mx-auto mb-6" />
               <h1 className="text-4xl font-bold text-text mb-4 font-serif">
                 Something Went Wrong
@@ -246,7 +247,7 @@ export default function PaymentSuccessPage() {
             </div>
 
             {/* Help Section */}
-            <div className="mt-8 bg-background/30 backdrop-blur-sm rounded-xl p-6 border border-border">
+            <div className="mt-8 bg-foreground-secondary backdrop-blur-sm rounded-xl p-6 border border-neon-purple">
               <h3 className="text-lg font-semibold text-text mb-3">
                 Need Help?
               </h3>

@@ -43,7 +43,7 @@ const AreaDemographics: React.FC<AreaDemographicsProps> = ({
 
   if (loading) {
     return (
-      <section className="w-full md:flex-1 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border flex flex-col">
+      <section className="w-full md:flex-1 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-neon-purple flex flex-col">
         <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Area Demographics</h2>
         <div className="flex items-center justify-center py-8 flex-1">
           <div className="text-text">Loading city data...</div>
@@ -54,7 +54,7 @@ const AreaDemographics: React.FC<AreaDemographicsProps> = ({
 
   if (error || !cityData) {
     return (
-      <section className="w-full md:flex-1 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border flex flex-col">
+      <section className="w-full md:flex-1 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-neon-purple flex flex-col">
         <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Area Demographics</h2>
         <div className="flex items-center justify-center py-8 flex-1">
           <div className="text-text text-center">
@@ -88,7 +88,7 @@ const AreaDemographics: React.FC<AreaDemographicsProps> = ({
       tooltip: {
         enabled: true,
         backgroundColor: "#27272a", // bg-foreground (slate-900)
-        borderColor: "#a78bfa", // border-border/violet-400
+        borderColor: "#a78bfa", // border-neon-purple/violet-400
         borderWidth: 1,
         titleColor: "#c4b5fd", // violet-300
         bodyColor: "#f1f5f9", // slate-50
@@ -118,15 +118,15 @@ const AreaDemographics: React.FC<AreaDemographicsProps> = ({
       {
         label: "Age Demographics",
         data: [cityData.aged0to17, cityData.aged18to24, cityData.aged25to49, cityData.aged50to64, cityData.aged65plus],
-        backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#FF9F1C", "#2563EB"],
+        backgroundColor: ["rgb(57, 255, 20)", "rgb(15, 105, 255)", "rgb(255, 5, 5)", "rgb(140, 0, 255)", "rgb(255, 154, 0)"],
       },
     ],
   };
 
   return (
-    <section className="w-full md:w-1/2 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-border flex flex-col">
+    <section className="w-full md:w-1/2 mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-neon-purple flex flex-col">
       <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Area Demographics</h2>
-      <div className="flex flex-col gap-2 text-text text-left text-sm mb-4 border-2 border-border rounded-sm bg-slate-700 p-2">
+      <div className="flex flex-col gap-2 text-text text-left text-sm mb-4 border-2 border-neon-blue rounded-sm bg-foreground-secondary p-2">
         <h3 className="text-3xl font-bold text-text mb-6 text-left pb-2">{name}</h3>
         <div className="flex flex-row justify-between mr-4">
           <span className="text-xl font-bold">Population: {cityData.Population}</span>

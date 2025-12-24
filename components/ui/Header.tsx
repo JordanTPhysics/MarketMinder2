@@ -6,9 +6,9 @@ const Header = () => {
 
   return (
     <header
-      className="w-full items-center text-center flex justify-center lg:flex-row md:flex-row flex-col lg:justify-between p-4 m-0 bg-slate-700/90 backdrop-blur-sm"
+      className="w-full items-center text-center flex justify-center lg:flex-row md:flex-row flex-col lg:justify-between p-4 m-0 bg-background-secondary backdrop-blur-sm"
     >
-      <div className='lg:flex lg:flex-row text-text font-display justify-evenly items-center'>
+      <div className='lg:flex lg:flex-row text-text font-serif justify-evenly items-center'>
         <HeaderLogo />
       </div>
       <AuthButtons />
