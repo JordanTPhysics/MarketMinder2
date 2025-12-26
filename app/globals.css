@@ -107,7 +107,7 @@
       left: 0;
       width: 100vw; /* Full width of the viewport */
       height: 100vh; /* Full height of the viewport */
-      background-image: url('/images/MarkitMinder_bg.jpg'); /* Update with your image path */
+      background-image: url('/images/MarketMinder_bg.jpg'); /* Update with your image path */
       background-size: cover; /* Make sure the image covers the whole area */
       background-position: center; /* Center the image */
       background-repeat: no-repeat; /* Prevent tiling */

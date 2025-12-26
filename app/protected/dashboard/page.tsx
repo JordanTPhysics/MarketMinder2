@@ -9,9 +9,10 @@ const InteractiveMap = dynamic(() => import('../../../components/InteractiveMap'
 });
 
 import { columns, Place, IsCloseMatch, calculateUptime } from "../../../lib/places";
-import BusinessIntelligence from "../../../components/BusinessIntelligence";
-import AreaDemographics from "../../../components/AreaDemographics";
-import GoogleSearchResult from "../../../components/GoogleSearchRanking";
+import { Review } from "@/lib/review";
+import BusinessIntelligence from "@/components/BusinessIntelligence";
+import AreaDemographics from "@/components/AreaDemographics";
+import GoogleSearchResult from "@/components/GoogleSearchRanking";
 import ScrapeContacts from "@/components/ScrapeContacts";
 
 import { DataTable } from "../../../components/ui/data-table";
@@ -34,10 +35,7 @@ import Link from "next/link";
 import { computeLocalDensityScores, LatLng } from "@/lib/spatialDensity";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
-import { useSubscription } from "../../../utils/use-subscription";
-import { useRouter } from "next/navigation";
-
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+import { ReviewSummary } from "@/components/ReviewSummary";
 
 const getPlacesFromData = (data: any, name: string) => {
   const places = [];
@@ -62,7 +60,7 @@ const getPlacesFromData = (data: any, name: string) => {
     );
 
     place.Uptime = calculateUptime(openHours);
-
+    place.Reviews = data.places[i].reviews.map((review: any) => new Review(placeName, review.authorAttribution.displayName, review.rating, review.originalText?.text || "", review.publishTime));
     places.push(place);
   }
 
@@ -118,8 +116,7 @@ const Dash = () => {
     city: "",
     postcode: "",
   });
-
-
+  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   // Add timeout to prevent infinite loading
   useEffect(() => {
     if (userLoading) {
@@ -399,9 +396,9 @@ const Dash = () => {
             </div>
           )}
 
-          <form onSubmit={handleFormSubmit} className={error?.type === 'limit_exceeded' ? 'pointer-events-none opacity-50 px-10' : ''}>
+          <form onSubmit={handleFormSubmit} className={error?.type === 'limit_exceeded' ? 'pointer-events-none opacity-50 px-10 min-w-full' : ''}>
 
-            <div className="mb-4 w-3/4">
+            <div className="mb-4 min-w-full">
               <label htmlFor="type" className="block text-lg font-semibold text-text text-left">Business Type:</label>
               <input
                 placeholder="restaurant, indian restaurant"
@@ -413,7 +410,7 @@ const Dash = () => {
                 className="mt-1 block w-full px-3 py-2 bg-foreground border-2 border-neon-purple rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500 visited:bac" />
             </div>
 
-            <div className="mb-4 w-2/3">
+            <div className="mb-4 min-w-full">
               <label htmlFor="country" className="block text-lg font-semibold text-text text-left">Country:</label>
               <ComboboxDropdown
                 type="country"
@@ -425,7 +422,7 @@ const Dash = () => {
               />
             </div>
 
-            <div className="mb-4 w-2/3">
+            <div className="mb-4 min-w-full">
               <label htmlFor="city" className="block text-lg font-semibold text-text text-left">City:</label>
               <ComboboxDropdown
                 type="city"
@@ -436,23 +433,23 @@ const Dash = () => {
               />
             </div>
 
-            <div className="mb-4 w-3/4">
+            <div className="mb-4 min-w-full">
               <label htmlFor="postcode" className="block text-lg font-semibold text-text text-left">Postcode <span className="italic text-sm">(Optional)</span></label>
               <input type="postcode" id="postcode" name="postcode" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border-2 border-neon-purple rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
             </div>
 
-            <div className="mb-4 w-3/4">
+            <div className="mb-4 min-w-full">
               <label htmlFor="name" className="block text-lg font-semibold text-text text-left">Business Name <span className="italic text-sm">(Optional)</span></label>
               <input placeholder="Nawaabs" type="name" id="name" name="name" onChange={handleFormChange} className="mt-1 block w-full px-3 py-2 bg-foreground border-2 border-neon-purple rounded-md shadow-sm focus:outline-none focus:ring focus:ring-slate-500" />
             </div>
 
             <ProfessionalOnly
-              fallback={<div className="w-3/4">MarkitMinder Professional users can select additional data fields.</div>}
+              fallback={<div className="w-3/4">MarketMinder Professional users can select additional data fields.</div>}
             >
-              <div className="mb-4 w-2/3 p-3 bg-foreground/50 rounded-md border-2 border-neon-purple">
+              <div className="mb-4 p-3 bg-foreground/50 rounded-md border-2 border-neon-purple">
                 <label className="block text-sm font-semibold text-text text-left mb-2">Premium Data Fields:</label>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center space-x-2 py-2">
+                <div className="grid grid-cols-2">
+                  <div className="col-span-2 flex items-center space-x-2 py-2">
                     <Checkbox
                       id="All"
                       checked={columnVisibility.phone && columnVisibility.openHours && columnVisibility.meanDistance && columnVisibility.densityScore}
@@ -511,8 +508,8 @@ const Dash = () => {
             </div>
           </form>
           <div>
-            {API_KEY == null ? <span className="text-danger">Google Maps API Key not Available</span> :
-              <APIProvider apiKey={API_KEY}>
+            {mapsApiKey === "" ? <span className="text-danger">Google Maps API Key not Available</span> :
+              <APIProvider apiKey={mapsApiKey || ""}>
                 <InteractiveMap
                   center={latLng}
                   zoom={zoom}
@@ -611,12 +608,19 @@ const Dash = () => {
           </div>
         ) : <div className="text-text text-2xl font-semibold"></div>}
         <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 border-neon-yellow w-full pl-4">Analytics</h2>
-
+        </section>
+        {places.some(p => p.Reviews.length > 0) && (
+        <section className="flex flex-col items-center justify-center h-2/3 w-screen p-2">
+          <h2 className="lg:text-4xl text-2xl font-semibold italic text-text text-left border-b-2 border-neon-yellow w-full pl-4">Reviews</h2>
+          <ReviewSummary reviews={places.flatMap(p => p.Reviews)} userBusinessName={formData.name.trim()} />
+          </section>
+        )}
+        
         {places.length > 0 ? (
           <PaidOnly
             fallback={
               <div className="w-full max-w-2xl mx-auto mt-8 bg-foreground rounded-lg shadow-lg p-6 border-2 border-neon-red">
-                <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Business Viability Rating</h2>
+                <h2 className="text-2xl font-bold text-text mb-6 text-left border-b-2 pb-2">Business Intelligence</h2>
                 <div className="text-center py-8">
                   <h3 className="text-xl font-semibold text-text mb-4">Upgrade to Access Business Analytics</h3>
                   <p className="text-text/70 mb-6">
@@ -657,7 +661,7 @@ const Dash = () => {
           </PaidOnly>
         ) : null}
 
-      </section>
+      
       <BusinessOnly
         fallback={
           <div>

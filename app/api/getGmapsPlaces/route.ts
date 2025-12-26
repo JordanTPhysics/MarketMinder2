@@ -4,8 +4,7 @@ import { createClient } from '../../../utils/supabase/server'
 import { checkDailyRequestLimitServer, incrementUserRequestsWithCount } from '../../../utils/request-tracker-server'
 
 export async function POST(req: NextRequest) {
-  // Prefer non-prefixed key for server-side (more secure), fall back to prefixed for backward compatibility
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
   if (!apiKey) {
     return NextResponse.json(
       { error: 'Google Maps API key is missing' },
@@ -72,7 +71,11 @@ export async function POST(req: NextRequest) {
         'places.name',
         'places.nationalPhoneNumber',
         'places.userRatingCount',
-        'places.regularOpeningHours.weekdayDescriptions'
+        'places.regularOpeningHours.weekdayDescriptions',
+        'places.reviews.rating',
+        'places.reviews.originalText.text',
+        'places.reviews.publishTime',
+        'places.reviews.authorAttribution.displayName'
       ].join(','),
     }
 

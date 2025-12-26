@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react"; 7
 import emailjs from '@emailjs/browser';
-import { PaidOnly, SubscriptionGuard } from "@/components/SubscriptionGuard";
 
 export default function AccountPage() {
   const { user, loading: userLoading } = useUser();
@@ -19,7 +18,7 @@ export default function AccountPage() {
     type: 'general',
     name: '',
     userEmail: user?.email,
-    toEmail: process.env.NEXT_PUBLIC_EMAILJS_TO_EMAIL || 'contact@www.markitminder.com'
+    toEmail: process.env.NEXT_PUBLIC_EMAILJS_TO_EMAIL || 'support@marketminder.co.uk'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -65,7 +64,7 @@ export default function AccountPage() {
         type: 'general',
         name: '',
         userEmail: user?.email,
-        toEmail: process.env.NEXT_PUBLIC_EMAILJS_TO_EMAIL || 'contact@www.markitminder.com'
+        toEmail: process.env.NEXT_PUBLIC_EMAILJS_TO_EMAIL || 'support@marketminder.co.uk'
       });
     } catch (error) {
       console.error('Contact form submission error:', error);
@@ -179,10 +178,10 @@ export default function AccountPage() {
             <p className="text-text">
               <strong>Support Email:</strong>
               <a
-                href="mailto:contact@www.markitminder.com"
+                href="mailto:support@marketminder.co.uk"
                 className="text-blue-400 hover:text-blue-300 ml-2 underline"
               >
-                contact@www.markitminder.com
+                support@marketminder.co.uk
               </a>
             </p>
           </div>

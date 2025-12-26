@@ -1,5 +1,4 @@
 import { Titillium_Web, Montserrat } from "next/font/google";
-import Head from "next/head";
 import "./globals.css";
 import Footer from "@/components/ui/Footer";
 import Header from "@/components/ui/Header";
@@ -8,35 +7,35 @@ import Script from "next/script";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://market-minder.vercel.app"),
+  metadataBase: new URL("https://marketminder.co.uk"),
   title: {
-    default: "MarkitMinder – Data-Driven Local Business Insights",
-    template: "%s | MarkitMinder",
+    default: "MarketMinder – Data-Driven Local Business Insights",
+    template: "%s | MarketMinder",
   },
   description:
-    "MarkitMinder helps businesses analyse, compare, and rate local companies using real-world market and Google Maps data.",
+    "MarketMinder helps businesses analyse, compare, and rate local companies using real-world market and Google Maps data.",
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
-    url: "https://market-minder.vercel.app",
-    title: "MarkitMinder – Data-Driven Local Business Insights",
+    url: "https://marketminder.co.uk",
+    title: "MarketMinder – Data-Driven Local Business Insights",
     description:
       "Analyse local businesses using real-world market data, reviews, and competitive insights.",
-    siteName: "MarkitMinder",
+    siteName: "MarketMinder",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "MarkitMinder dashboard preview",
+        alt: "MarketMinder dashboard preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "MarkitMinder – Local Business Analytics",
+    title: "MarketMinder – Local Business Analytics",
     description:
       "Discover market insights, competitor analysis, and local business ratings.",
     images: ["/og-image.png"],
@@ -64,7 +63,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${titilliumWeb.variable} ${montserrat.variable}`} suppressHydrationWarning>
-      <Head>
       <Script
           id="schema-software-app"
           type="application/ld+json"
@@ -73,10 +71,10 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
-              name: "MarkitMinder",
+              name: "MarketMinder",
               applicationCategory: "BusinessApplication",
               operatingSystem: "Web",
-              url: "https://market-minder.vercel.app",
+              url: "https://marketminder.co.uk",
               description:
                 "A SaaS platform for analysing, rating, and comparing local businesses using market and Google Maps data.",
               offers: {
@@ -94,7 +92,6 @@ export default function RootLayout({
             }),
           }}
         />
-      </Head>
       <body className="text-text bg-gradient-to-b from-background to-background-secondary flex flex-col align-middle items-center text-center">
 
         <div className="">

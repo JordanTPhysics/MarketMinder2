@@ -41,7 +41,7 @@ const PricingPage = () => {
       price: "£0",
       priceId: "none",
       period: "",
-      description: "Perfect for getting started with MarkitMinder",
+      description: "Perfect for getting started with MarketMinder",
       icon: <Star className="w-8 h-8 text-yellow-400" />,
       features: [
         "1 search per day",
@@ -160,7 +160,7 @@ const PricingPage = () => {
             Choose Your Plan
           </h1>
           <p className="text-xl text-text/80 max-w-3xl mx-auto leading-relaxed">
-            Unlock the full potential of MarkitMinder with our flexible pricing plans. 
+            Unlock the full potential of MarketMinder with our flexible pricing plans. 
             From individual traders to enterprise teams, we have the perfect solution for you.
           </p>
 

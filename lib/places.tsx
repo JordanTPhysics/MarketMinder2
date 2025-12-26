@@ -7,6 +7,7 @@ import { ArrowUpDown } from "lucide-react"
 import { FaExternalLinkAlt } from "react-icons/fa";
 
 import Link from "next/link"
+import { Review } from "./review"
 
 import { MdOutlineCheckBoxOutlineBlank, MdOutlineCheckBox } from "react-icons/md";
 
@@ -26,7 +27,8 @@ export class Place {
   OpenHours: string = "";
   MeanDistance: number = 0;
   DensityScore: number = 0;
-  Uptime: number = 0; // Percentage of week open (0-100)
+  Uptime: number = 0;
+  Reviews: Review[] = [];
 
   constructor(
     PlaceID: string,
@@ -43,6 +45,7 @@ export class Place {
     OpenHours: string = "",
     MeanDistance: number = 0,
     DensityScore: number = 0,
+    Reviews: Review[] = [],
   ) {
     this.PlaceID = PlaceID;
     this.Address = Address;
@@ -60,6 +63,7 @@ export class Place {
     this.MeanDistance = MeanDistance;
     this.DensityScore = DensityScore;
     this.Uptime = 0; // Will be calculated separately
+    this.Reviews = Reviews;
   }
 }
 

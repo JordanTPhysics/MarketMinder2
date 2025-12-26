@@ -3,10 +3,6 @@
 import { useState, useEffect } from 'react';
 import { createClient } from './supabase/client';
 
-interface UserProfile {
-  user_id: string;
-  subscription_id: number;
-}
 
 export function useSubscription() {
   const [subscription, setSubscription] = useState<number | null>(null);
@@ -74,9 +70,9 @@ export function useSubscription() {
     loading, 
     error,
     isFree: subscription === 1,
-    isBusiness: subscription === 2,
-    isProfessional: subscription === 3,
-    isEnterprise: subscription === 4,
+    isBusiness: subscription === 7,
+    isProfessional: subscription === 2,
+    isEnterprise: subscription === 3,
     hasPaidPlan: subscription && subscription > 1
   };
 }

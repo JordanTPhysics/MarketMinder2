@@ -4,6 +4,7 @@ export type Message =
   | { message: string };
 
 export function FormMessage({ message }: { message: Message }) {
+  console.log(message);
   return (
     <div className="flex flex-col gap-2 w-fit mx-auto max-w-md text-sm text-white">
       {"success" in message && (

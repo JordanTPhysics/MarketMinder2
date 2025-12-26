@@ -3,8 +3,6 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import MainBanner from "@/components/MainBanner";
-import { getDashboardRouteServer } from "@/utils/dashboard-routing";
-
 
 import { BsLightningCharge } from "react-icons/bs";
 import { TbMapSearch } from "react-icons/tb";
@@ -22,7 +20,6 @@ export default async function ProtectedPage() {
     return redirect("/sign-in");
   }
 
-  const dashboardRoute = await getDashboardRouteServer(supabase);
 
   return (
     <div className="w-screen min-h-screen flex flex-col items-center justify-evenly p-2">
@@ -32,7 +29,7 @@ export default async function ProtectedPage() {
         <span className='lg:text-3xl text-lg m-4 w-2/3'>
           Looking to start a business, or buy an existing one, but not sure of market viability?
           Interested in discovering your local competitors to see how you can stand out?
-          Or are you a sales rep looking for prospects? MarkitMinder has all the tools you need to keep a finger on the pulse in real time.
+          Or are you a sales rep looking for prospects? MarketMinder has all the tools you need to keep a finger on the pulse in real time.
         </span>
         <ul className="list-disc list-inside lg:text-3xl text-lg text-text">
           <li className="m-4 flex-row flex group cursor-pointer hover:bg-neon-red transition-all duration-300 rounded-lg p-2">

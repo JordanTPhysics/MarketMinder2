@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'Google API key is missing. Please set GOOGLE_MAPS_API_KEY environment variable.' },
+      { error: 'Google API key is missing. Please set GOOGLE_CUSTOM_SEARCH_API_KEY environment variable.' },
       { status: 500 }
     )
   }

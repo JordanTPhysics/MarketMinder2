@@ -221,7 +221,6 @@ export default function PaymentSuccessPage() {
           </div>
         ) : (
           <div className="text-center">
-            {/* Error State */}
             <div className="bg-foreground-secondary backdrop-blur-sm rounded-2xl p-8 border border-neon-orange">
               <XCircle className="w-20 h-20 text-danger mx-auto mb-6" />
               <h1 className="text-4xl font-bold text-text mb-4 font-serif">

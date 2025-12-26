@@ -3,8 +3,7 @@ import { createClient } from '../../../utils/supabase/server'
 import { checkDailyRequestLimitServer, incrementUserRequestsWithCount } from '../../../utils/request-tracker-server'
 
 export async function POST(req: NextRequest) {
-  // Prefer non-prefixed key for server-side (more secure), fall back to prefixed for backward compatibility
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
   if (!apiKey) {
     return NextResponse.json(
